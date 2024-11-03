@@ -1,0 +1,148 @@
+[package]
+name = "bitcoin-demo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bitcoin_hashes = "0.14.0"
+bitcoin = { path = "/home/bczhc/open-source/rust-bitcoin/bitcoin", features = ["secp-recovery"] }
+rand = "0.8.5"
+#bip38 = "1.1.0"
+hex = "0.4.3"
+zmq = "0.10.0"
+#tokio = { version = "1.29.1", features = ["macros", "rt-multi-thread"] }
+#reqwest = "0.11.18"
+sha2 = "0.10.7"
+digest = "0.10.7"
+num-traits = "0.2.16"
+num-bigint = "0.4.3"
+argon2 = "0.5.1"
+blake3 = { version = "1.4.1", features = ["traits-preview", "digest"] }
+#byteorder = "1.4.3"
+#electrum-client = "0.17.0"
+anyhow = "1.0.72"
+#librocksdb-sys = { version = "0.11.0+8.1.1", default-features = true, optional = true }
+#rocksdb = { version = "0.21.0", optional = true }
+rayon = "1.7.0"
+ripemd = "0.1.3"
+#bincode = { version = "2.0.0-rc.3", features = ["derive"] }
+#md-5 = "0.10.5"
+bitcoincore-rpc = "0.19.0"
+hex-literal = "0.4.1"
+tiny-bip39 = "2.0.0"
+#pbkdf2 = "0.12.2"
+#base64 = "0.21.5"
+#hmac = "0.12.1"
+bitcoin-block-parser = "0.3.2"
+chrono = "0.4.38"
+crossbeam-channel = "0.5.13"
+base64 = "0.22.1"
+
+# TODO: my local workaround for the unreleased versions
+[patch.crates-io]
+base58ck = { path = "/home/bczhc/open-source/rust-bitcoin/base58", features = ["alloc"] }
+bitcoin-primitives = { path = "/home/bczhc/open-source/rust-bitcoin/primitives" }
+bitcoin_hashes = { path = "/home/bczhc/open-source/rust-bitcoin/hashes", version = "=0.15.0" }
+bitcoin-internals = { path = "/home/bczhc/open-source/rust-bitcoin/internals" }
+
+#[[bin]]
+#name = "demo2"
+#path = "src/demo2.rs"
+
+#[[bin]]
+#name = "demo3"
+#path = "src/demo3.rs"
+
+[[bin]]
+name = "tx-subscriber"
+path = "src/tx_subscriber.rs"
+
+#[[bin]]
+#name = "my_brainwallet"
+#path = "src/my_brainwallet.rs"
+
+#[[bin]]
+#name = "brainwallet_db"
+#path = "src/brainwallet_db.rs"
+
+#[[bin]]
+#name = "bip38"
+#path = "src/bip38.rs"
+
+#[[bin]]
+#name = "get_unspent"
+#path = "src/get_unspent.rs"
+
+#[[bin]]
+#name = "get_unspent_ec"
+#path = "src/get_unspent_ec.rs"
+
+#[[bin]]
+#name = "demo4"
+#path = "src/demo4.rs"
+
+[[bin]]
+name = "bip39"
+path = "src/bip39.rs"
+
+#[[bin]]
+#name = "script_demo"
+#path = "src/script_demo.rs"
+
+#[[bin]]
+#name = "rpc_demo"
+#path = "src/rpc_demo.rs"
+#
+[[bin]]
+name = "p2sh"
+path = "src/p2sh.rs"
+
+[[bin]]
+name = "tx-history"
+path = "src/tx-history.rs"
+
+[[bin]]
+name = "signature"
+path = "src/signature.rs"
+
+[[bin]]
+name = "tx-send"
+path = "src/tx-send.rs"
+
+[[bin]]
+name = "ecdsa"
+path = "src/ecdsa.rs"
+
+[[bin]]
+name = "p2sh-redeem-inputs"
+path = "src/p2sh-redeem-inputs.rs"
+
+[[bin]]
+name = "tx-send-script-input"
+path = "src/tx-send-script-input.rs"
+
+[[bin]]
+name = "difficulty"
+path = "src/difficulty.rs"
+
+[[bin]]
+name = "broadcast_raw"
+path = "src/broadcast_raw.rs"
+
+[[bin]]
+name = "satoshi-address"
+path = "src/satoshi-address.rs"
+
+[[bin]]
+name = "bisect-keys"
+path = "src/bisect_keys.rs"
+
+[[bin]]
+name = "mining"
+path = "src/mining.rs"
+
+[features]
+#default = ["rocksdb"]
+#rocksdb = ["dep:librocksdb-sys", "dep:rocksdb"]
+
+[dev-dependencies]
