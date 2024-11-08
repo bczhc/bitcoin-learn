@@ -1,12 +1,13 @@
 use bitcoin::consensus::Decodable;
 use bitcoin::{Block, BlockHash};
-use bitcoin_demo::{BitcoinCoreVarIntReader, EncodeHex};
+use bitcoin_demo::{BitcoinCoreVarIntReader, EncodeHex, XorReader};
 use bitflags::bitflags;
 use leveldb::database::Database;
 use leveldb::kv::KV;
 use leveldb::options::{Options, ReadOptions};
 use std::fs::File;
-use std::io::{BufReader, Seek, SeekFrom};
+use std::io;
+use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::Path;
 
 #[derive(Debug, Clone)]
@@ -65,6 +66,19 @@ impl<T: DbKey> db_key::Key for KeyWrapper<T> {
 }
 
 fn main() -> anyhow::Result<()> {
+    let list = [
+        "00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043", /* #0 */
+        "0000000012982b6d5f621229286b880e909984df669c2afabb102ce311b13f28", /* #1 */
+        "00000000e2c8c94ba126169a88997233f07a9769e2b009fb10cad0e893eff2cb", /* #50000 */
+    ];
+    for b in list {
+        let block = get_block(b.parse()?)?;
+        println!("{}", block.block_hash());
+    }
+    Ok(())
+}
+
+fn get_block(block_hash: BlockHash) -> anyhow::Result<Block> {
     let options = Options::new();
     let db = Database::open(
         Path::new("/mnt/nvme/bitcoin/bitcoind/data/testnet4/blocks/index"),
@@ -72,12 +86,9 @@ fn main() -> anyhow::Result<()> {
     )
     .unwrap();
     let ro = ReadOptions::<KeyWrapper<BlockHash>>::new();
-    let bloch_hash =
-        "00000000000bf65febda12ae5dfd009acff48227b9533acffd84deea44d21bba" /* height: 12345 */
-            .parse::<BlockHash>()?;
 
     let value = db
-        .get(ro, KeyWrapper(bloch_hash))?
+        .get(ro, KeyWrapper(block_hash))?
         .expect("No record found");
     println!("Value: {}", value.hex());
 
@@ -94,25 +105,30 @@ fn main() -> anyhow::Result<()> {
     let block_status =
         BlockStatus::from_bits_truncate(block_status.try_into().expect("u8 expected"));
     assert!(block_status.contains(BlockStatus::BLOCK_HAVE_DATA));
-    assert!(block_status.contains(BlockStatus::BLOCK_HAVE_UNDO));
     let blk_file = int_reader.read();
     let blk_start = int_reader.read();
-    let _rev_start = int_reader.read();
+    if block_status.contains(BlockStatus::BLOCK_HAVE_UNDO) {
+        let _rev_start = int_reader.read();
+    }
 
-    println!("{}", blk_file);
-    println!("{}", blk_start);
+    println!("blk_file {}", blk_file);
+    println!("blk_start {}", blk_start);
 
     let mut file = File::open(
         Path::new("/mnt/nvme/bitcoin/bitcoind/blocks/testnet4/blocks").join(blk_filename(blk_file)),
     )?;
-    file.seek(SeekFrom::Start(blk_start))?;
-    let mut reader = BufReader::new(file);
-    let block = Block::consensus_decode_from_finite_reader(&mut reader).unwrap();
-    println!("{:?}", block.compute_merkle_root());
-    println!("{}", block.block_hash());
-    println!("{:?}", block);
+    let mut xor_file = File::open("/mnt/nvme/bitcoin/bitcoind/blocks/testnet4/blocks/xor.dat")?;
+    let mut xor_data = [0_u8; 8];
+    xor_file.read_exact(&mut xor_data)?;
 
-    Ok(())
+    file.seek(SeekFrom::Start(blk_start))?;
+    let mut reader = XorReader::new(file, xor_data);
+    reader.xor_skip(blk_start as usize);
+
+    let mut reader = BufReader::new(reader);
+
+    let block = Block::consensus_decode_from_finite_reader(&mut reader).unwrap();
+    Ok(block)
 }
 
 fn blk_filename(number: u64) -> String {

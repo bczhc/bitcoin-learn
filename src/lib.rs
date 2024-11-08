@@ -7,7 +7,7 @@ use bitcoin::key::Secp256k1;
 use bitcoin::opcodes::all::{OP_PUSHBYTES_75, OP_PUSHDATA1};
 use bitcoin::script::{PushBytes, ScriptExt};
 use bitcoin::secp256k1::{All, Message, SecretKey};
-use bitcoin::{Address, Amount, Network, PrivateKey, PublicKey, Script, Transaction};
+use bitcoin::{Amount, Network, PrivateKey, PublicKey, Script, TestnetVersion, Transaction};
 use bitcoin_block_parser::blocks::Options;
 use bitcoin_block_parser::headers::ParsedHeader;
 use bitcoin_block_parser::{BlockParser, DefaultParser, HeaderParser};
@@ -20,7 +20,7 @@ use rand::rngs::OsRng;
 use rand::RngCore;
 use sha2::Sha256;
 use std::env::args;
-use std::io::{stdin, stdout, Write};
+use std::io::{stdin, stdout, Read, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn random_secret_key() -> SecretKey {
@@ -147,9 +147,20 @@ pub fn bitcoin_rpc_testnet4() -> bitcoincore_rpc::Result<bitcoincore_rpc::Client
     )
 }
 
-pub fn new_parser() -> impl IntoIterator<Item = (usize, bitcoincore_rpc::bitcoin::Block)> {
+fn blocks_dir(network: Network) -> &'static str {
+    match network {
+        Network::Bitcoin => "/mnt/nvme/bitcoin/bitcoind/blocks/blocks",
+        Network::Testnet(TestnetVersion::V3) => "/mnt/nvme/bitcoin/bitcoind/blocks/testnet3/blocks",
+        Network::Testnet(TestnetVersion::V4) => "/mnt/nvme/bitcoin/bitcoind/blocks/testnet4/blocks",
+        _ => unimplemented!(),
+    }
+}
+
+pub fn new_parser(
+    network: Network,
+) -> impl IntoIterator<Item = (usize, bitcoincore_rpc::bitcoin::Block)> {
     let options = Options::default().order_output();
-    let blk_dir = "/mnt/nvme/bitcoin/bitcoind/blocks/testnet4/blocks";
+    let blk_dir = blocks_dir(network);
     let mut headers = HeaderParser::parse(blk_dir).unwrap();
     println!("{}", headers.len());
     // headers.reverse();
@@ -161,9 +172,11 @@ pub fn new_parser() -> impl IntoIterator<Item = (usize, bitcoincore_rpc::bitcoin
         .zip(parser.into_iter().map(Result::unwrap))
 }
 
-pub fn new_parser_rev() -> impl IntoIterator<Item = (usize, bitcoincore_rpc::bitcoin::Block)> {
+pub fn new_parser_rev(
+    network: Network,
+) -> impl IntoIterator<Item = (usize, bitcoincore_rpc::bitcoin::Block)> {
     let options = Options::default().order_output();
-    let blk_dir = "/mnt/nvme/bitcoin/bitcoind/blocks/blocks";
+    let blk_dir = blocks_dir(network);
     let mut headers = HeaderParser::parse(blk_dir).unwrap();
     headers.reverse();
     let parser = DefaultParser.parse_with_opts(&headers, options);
@@ -174,10 +187,8 @@ pub fn new_parser_rev() -> impl IntoIterator<Item = (usize, bitcoincore_rpc::bit
         .zip(parser.into_iter().map(Result::unwrap))
 }
 
-const BITCOIN_CORE_BLK_DIR: &str = "/mnt/nvme/bitcoin/bitcoind/blocks/blocks";
-
-pub fn parse_headers() -> Vec<ParsedHeader> {
-    HeaderParser::parse(BITCOIN_CORE_BLK_DIR).unwrap()
+pub fn parse_headers(network: Network) -> Vec<ParsedHeader> {
+    HeaderParser::parse(blocks_dir(network)).unwrap()
 }
 
 pub fn block_parser(
@@ -192,9 +203,10 @@ pub fn block_parser(
 
 /// Only takes the recent `block_count` blocks.
 pub fn block_parser_recent(
+    network: Network,
     block_count: usize,
 ) -> impl IntoIterator<Item = (usize, bitcoincore_rpc::bitcoin::Block)> {
-    let headers = parse_headers();
+    let headers = parse_headers(network);
     let start = headers.len() - block_count;
     let selected_headers = &headers[start..];
     let selected_height_start = headers.len() - block_count;
@@ -400,15 +412,103 @@ pub fn bitcoin_old_to_new<
     bitcoin::consensus::deserialize(&data).unwrap()
 }
 
+/// Circularly take values.
+///
+/// # Examples
+///
+/// ```
+/// use bitcoin_demo::Circular;
+///
+/// let data = [1_u8, 2];
+/// let mut c = Circular::new(data);
+/// assert_eq!(c.next(), 1_u8);
+/// assert_eq!(c.next(), 2_u8);
+/// assert_eq!(c.next(), 1_u8);
+/// assert_eq!(c.next(), 2_u8);
+/// ```
+pub struct Circular {
+    vec: Vec<u8>,
+    counter: usize,
+}
+
+impl Circular {
+    pub fn new(bytes: impl Into<Vec<u8>>) -> Self {
+        Self {
+            vec: bytes.into(),
+            counter: 0,
+        }
+    }
+
+    #[inline]
+    pub fn next(&mut self) -> u8 {
+        let x = self.vec[self.counter % self.vec.len()];
+        self.counter += 1;
+        x
+    }
+
+    pub fn skip(&mut self, size: usize) {
+        self.counter += size;
+    }
+}
+
+pub struct XorReader<R: Read> {
+    inner: R,
+    xor: Circular,
+}
+
+impl<R: Read> XorReader<R> {
+    pub fn new(reader: R, xor_bytes: impl Into<Vec<u8>>) -> Self {
+        Self {
+            inner: reader,
+            xor: Circular::new(xor_bytes),
+        }
+    }
+
+    pub fn xor_skip(&mut self, size: usize) {
+        self.xor.skip(size);
+    }
+}
+
+impl<R: Read> Read for XorReader<R> {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        let size = self.inner.read(buf)?;
+        for x in &mut buf[..size] {
+            *x ^= self.xor.next();
+        }
+        Ok(size)
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use crate::decode_bitcoin_core_var_int;
+    use crate::{decode_bitcoin_core_var_int, XorReader};
     use hex_literal::hex;
+    use std::io::{Cursor, Read};
 
     #[test]
     fn bitcoin_core_var_int() {
         assert_eq!(decode_bitcoin_core_var_int(&hex!("")), (0, 0));
-        assert_eq!(decode_bitcoin_core_var_int(&hex!("8eed3c")), (259900, 3));
+        assert_eq!(decode_bitcoin_core_var_int(&hex!("12")), (0x12, 1));
         assert_eq!(decode_bitcoin_core_var_int(&hex!("df39")), (12345, 2));
+        assert_eq!(decode_bitcoin_core_var_int(&hex!("8eed3c")), (259900, 3));
+    }
+
+    #[test]
+    fn xor() {
+        let data = Cursor::new(hex!("8e ed 3c df 39").to_vec());
+        let mut xor = XorReader::new(data, hex!("aabb"));
+        let mut out = Vec::new();
+        xor.read_to_end(&mut out).unwrap();
+
+        assert_eq!(
+            &out,
+            &[
+                0x8e ^ 0xaa,
+                0xed ^ 0xbb,
+                0x3c ^ 0xaa,
+                0xdf ^ 0xbb,
+                0x39 ^ 0xaa,
+            ]
+        );
     }
 }

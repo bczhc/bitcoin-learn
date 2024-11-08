@@ -1,6 +1,5 @@
 use bitcoin::secp256k1::SecretKey;
-use bitcoin::PrivateKey;
-use bitcoin_demo::{random_secret_key, EncodeHex};
+use bitcoin_demo::EncodeHex;
 use hex_literal::hex;
 
 fn main() -> anyhow::Result<()> {

@@ -1,13 +1,13 @@
 #![feature(slice_split_once)]
 
-use bitcoin::ScriptBuf;
+use bitcoin::{Network, ScriptBuf};
 use bitcoin_demo::new_parser;
 use std::collections::HashSet;
 
 fn main() -> anyhow::Result<()> {
     let mut set = HashSet::new();
 
-    let parser = new_parser().into_iter().take(10_000);
+    let parser = new_parser(Network::Bitcoin).into_iter().take(10_000);
     for x in parser {
         for tx in x.1.txdata {
             for (index, txo) in tx.output.iter().enumerate() {
@@ -20,7 +20,7 @@ fn main() -> anyhow::Result<()> {
 
     println!("{}", set.len());
 
-    let parser = new_parser().into_iter().take(10_000);
+    let parser = new_parser(Network::Bitcoin).into_iter().take(10_000);
     for x in parser {
         for tx in x.1.txdata {
             for txi in &tx.input {

@@ -1,5 +1,5 @@
 use bitcoin::address::script_pubkey::ScriptBufExt;
-use bitcoin::{Amount, PublicKey, ScriptBuf};
+use bitcoin::{Amount, Network, PublicKey, ScriptBuf};
 use bitcoin_demo::{new_parser, EncodeHex};
 use hex_literal::hex;
 
@@ -14,7 +14,7 @@ fn main() -> anyhow::Result<()> {
     let mut p2pkh_txo_count = 0_u64;
     let mut p2pkh_amount = 0_u64;
 
-    let parser = new_parser();
+    let parser = new_parser(Network::Bitcoin);
     for (_h, block) in parser {
         for tx in block.txdata {
             for (index, txo) in tx.output.iter().enumerate() {

@@ -33,7 +33,9 @@ tiny-bip39 = "2.0.0"
 #pbkdf2 = "0.12.2"
 #base64 = "0.21.5"
 #hmac = "0.12.1"
-bitcoin-block-parser = "0.3.2"
+#bitcoin-block-parser = "0.3.2"
+# Until this gets merged: https://github.com/sumopool/bitcoin-block-parser/pull/4
+bitcoin-block-parser = { git = "https://github.com/bczhc/bitcoin-block-parser", branch = "xor-blk" }
 chrono = "0.4.38"
 crossbeam-channel = "0.5.13"
 base64 = "0.22.1"

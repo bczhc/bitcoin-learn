@@ -1,4 +1,4 @@
-use bitcoin::{OutPoint, Script};
+use bitcoin::{Network, OutPoint, Script, TestnetVersion};
 use bitcoin_demo::{extract_op_return, han_char, new_parser, EncodeHex};
 use chrono::TimeZone;
 use rusqlite::{params, Connection};
@@ -24,9 +24,8 @@ fn main() {
     values (?, ?, ?, ?, ?, ?, ?)"#).unwrap();
 
     // let parser = block_parser_recent(10 * 30 * 24 * 60 / 10 /* 10 months */);
-    let parser = new_parser();
+    let parser = new_parser(Network::Testnet(TestnetVersion::V4));
     for (height, block) in parser {
-        println!("{}", height);
         for tx in block.txdata {
             for (txo_idx, txo) in tx.output.iter().enumerate() {
                 let script = &txo.script_pubkey;

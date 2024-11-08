@@ -6,7 +6,7 @@ use std::fs::File;
 use std::io::{BufReader, ErrorKind, Read};
 use std::path::Path;
 
-const MAGIC: [u8; 4] = hex!("2D F3 36 01");
+const MAGIC: [u8; 4] = hex!("f9 be b4 d9");
 
 fn main() {
     let blk_dir = "/mnt/nvme/bitcoin/bitcoind/blocks/testnet3/blocks";

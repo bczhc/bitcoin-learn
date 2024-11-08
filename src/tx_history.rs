@@ -1,4 +1,5 @@
 use bitcoin::script::ScriptExt;
+use bitcoin::Network;
 use bitcoin_demo::new_parser;
 use bitcoincore_rpc::bitcoin::opcodes::all::{OP_PUSHBYTES_33, OP_PUSHBYTES_72};
 use rayon::prelude::*;
@@ -8,7 +9,7 @@ fn main() -> anyhow::Result<()> {
     const SIG_LEN: usize = 72;
     const PUBKEY_LEN: usize = 33;
 
-    let receiver = new_parser();
+    let receiver = new_parser(Network::Bitcoin);
     for (height, block) in receiver {
         for x in block.txdata {
             for (i, txi) in x.input.iter().enumerate() {

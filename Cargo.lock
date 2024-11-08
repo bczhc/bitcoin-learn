@@ -210,8 +210,7 @@ dependencies = [
 [[package]]
 name = "bitcoin-block-parser"
 version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da12d9964cd73177ae3c2d326028558378507d40efbc2cdcb3006034e0a4561e"
+source = "git+https://github.com/bczhc/bitcoin-block-parser?branch=xor-blk#e28664c2ddaa017664a9f35296b30fa891a5889e"
 dependencies = [
  "anyhow",
  "bitcoin 0.32.3",
