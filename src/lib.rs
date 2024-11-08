@@ -1,17 +1,17 @@
 #![allow(incomplete_features, const_evaluatable_unchecked)]
 #![feature(generic_const_exprs)]
 
-use std::env::args;
-use std::io::{stdin, stdout, Write};
-use std::time::{SystemTime, UNIX_EPOCH};
-
+use bczhc_lib::char::han_char_range;
 use bitcoin::absolute::encode;
 use bitcoin::key::Secp256k1;
-use bitcoin::script::PushBytes;
+use bitcoin::opcodes::all::{OP_PUSHBYTES_75, OP_PUSHDATA1};
+use bitcoin::script::{PushBytes, ScriptExt};
 use bitcoin::secp256k1::{All, Message, SecretKey};
-use bitcoin::{Address, Amount, Network, PrivateKey, PublicKey, Transaction};
+use bitcoin::{Address, Amount, Network, PrivateKey, PublicKey, Script, Transaction};
 use bitcoin_block_parser::blocks::Options;
+use bitcoin_block_parser::headers::ParsedHeader;
 use bitcoin_block_parser::{BlockParser, DefaultParser, HeaderParser};
+use bitcoincore_rpc::bitcoin::opcodes::all::OP_PUSHBYTES_1;
 use bitcoincore_rpc::{Auth, RpcApi};
 use digest::generic_array::GenericArray;
 use digest::typenum::Unsigned;
@@ -19,6 +19,9 @@ use digest::{Digest, FixedOutput, OutputSizeUser};
 use rand::rngs::OsRng;
 use rand::RngCore;
 use sha2::Sha256;
+use std::env::args;
+use std::io::{stdin, stdout, Write};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn random_secret_key() -> SecretKey {
     let mut bytes = [0_u8; 32];
@@ -157,14 +160,59 @@ pub fn bitcoin_rpc_testnet4() -> bitcoincore_rpc::Result<bitcoincore_rpc::Client
 
 pub fn new_parser() -> impl IntoIterator<Item = (usize, bitcoincore_rpc::bitcoin::Block)> {
     let options = Options::default().order_output();
-    let blk_dir = "/mnt/nvme/bitcoin/bitcoind/blocks/blocks";
+    let blk_dir = "/mnt/nvme/bitcoin/bitcoind/blocks/testnet4/blocks";
     let mut headers = HeaderParser::parse(blk_dir).unwrap();
+    println!("{}", headers.len());
     // headers.reverse();
     let parser = DefaultParser.parse_with_opts(&headers, options);
 
     let mut height = headers.len() - 1;
     (0..=height)
+        // .rev()
+        .zip(parser.into_iter().map(Result::unwrap))
+}
+
+pub fn new_parser_rev() -> impl IntoIterator<Item = (usize, bitcoincore_rpc::bitcoin::Block)> {
+    let options = Options::default().order_output();
+    let blk_dir = "/mnt/nvme/bitcoin/bitcoind/blocks/blocks";
+    let mut headers = HeaderParser::parse(blk_dir).unwrap();
+    headers.reverse();
+    let parser = DefaultParser.parse_with_opts(&headers, options);
+
+    let mut height = headers.len() - 1;
+    (0..=height)
         .rev()
+        .zip(parser.into_iter().map(Result::unwrap))
+}
+
+const BITCOIN_CORE_BLK_DIR: &str = "/mnt/nvme/bitcoin/bitcoind/blocks/blocks";
+
+pub fn parse_headers() -> Vec<ParsedHeader> {
+    HeaderParser::parse(BITCOIN_CORE_BLK_DIR).unwrap()
+}
+
+pub fn block_parser(
+    headers: &[ParsedHeader],
+) -> impl IntoIterator<Item = (usize, bitcoincore_rpc::bitcoin::Block)> {
+    let options = Options::default().order_output();
+    let parser = DefaultParser.parse_with_opts(headers, options);
+
+    let mut height = headers.len() - 1;
+    (0..=height).zip(parser.into_iter().map(Result::unwrap))
+}
+
+/// Only takes the recent `block_count` blocks.
+pub fn block_parser_recent(
+    block_count: usize,
+) -> impl IntoIterator<Item = (usize, bitcoincore_rpc::bitcoin::Block)> {
+    let headers = parse_headers();
+    let start = headers.len() - block_count;
+    let selected_headers = &headers[start..];
+    let selected_height_start = headers.len() - block_count;
+
+    let options = Options::default().order_output();
+    let parser = DefaultParser.parse_with_opts(selected_headers, options);
+    (selected_height_start..(selected_height_start + block_count))
         .zip(parser.into_iter().map(Result::unwrap))
 }
 
@@ -216,3 +264,125 @@ pub trait BitcoinAmountExt {
 }
 
 impl BitcoinAmountExt for Amount {}
+
+pub fn extract_op_return(script: &Script) -> Option<&[u8]> {
+    if !script.is_op_return() {
+        return None;
+    }
+
+    let bytes = script.as_bytes();
+
+    // merely OP_RETURN
+    if bytes.len() == 1 {
+        return None;
+    }
+
+    // OP_RETURN <OP_PUSHBYTES_1..=OP_PUSHBYTES_75> <data>
+    if (OP_PUSHBYTES_1.to_u8()..=OP_PUSHBYTES_75.to_u8()).contains(&bytes[1]) {
+        let pushed_len = (bytes[1] - OP_PUSHBYTES_1.to_u8() + 1) as usize;
+        if bytes.len() - 2 < pushed_len {
+            return None;
+        }
+        let data = &bytes[2..(2 + pushed_len)];
+        return Some(data);
+    }
+
+    // OP_RETURN <OP_PUSHDATA1> <length> <data>
+    if bytes[1] == OP_PUSHDATA1.to_u8() {
+        let len = bytes[2] as usize;
+        if bytes.len() - 3 < len {
+            return None;
+        }
+        return Some(&bytes[3..(3 + len)]);
+    }
+
+    None
+}
+
+pub fn han_char(c: char) -> bool {
+    if "，。《》？！【】〔〕「」·—：；“”‘’…"
+        .chars()
+        .any(|x| x == c)
+    {
+        return true;
+    };
+
+    han_char_range(c as u32)
+}
+
+/// This decodes `VarInt` (not `CompactInt`) referred to in Bitcoin-core.
+///
+/// See:
+/// - https://github.com/bitcoin/bitcoin/blob/c9e67e214f03519da15d81bd7619879bd78dcfb9/src/serialize.h#L370
+///
+/// And the decoding algorithm used here is derived from:
+///
+/// https://github.com/in3rsha/bitcoin-chainstate-parser/blob/master/README.md?tab=readme-ov-file#varints
+pub fn decode_bitcoin_core_var_int(bytes: &[u8]) -> (u64, usize) {
+    const MAX_BYTES_LEN: usize = 4;
+    let mut buf = [0_u8; MAX_BYTES_LEN];
+    let mut len = 0_usize;
+    for (i, &x) in bytes.iter().enumerate() {
+        len += 1;
+        buf[i] = x & 0b0111_1111;
+        if x & 0b10000000 == 0b00000000 {
+            break;
+        }
+        buf[i] += 1;
+        assert_eq!(buf[0] & 0b10000000, 0b00000000);
+    }
+
+    match len {
+        0 => (0, 0),
+        1 => (buf[0] as u64, 1),
+        2 => (((buf[0] as u64) << 7) | buf[1] as u64, 2),
+        3 => (
+            ((buf[0] as u64) << 14) | ((buf[1] as u64) << 7) | buf[2] as u64,
+            3,
+        ),
+        4 => (
+            ((buf[0] as u64) << 21)
+                | ((buf[1] as u64) << 14)
+                | ((buf[2] as u64) << 7)
+                | buf[3] as u64,
+            4,
+        ),
+        _ => {
+            unimplemented!()
+        }
+    }
+}
+
+pub struct BitcoinCoreVarIntReader<'a> {
+    data: &'a [u8],
+    pos: usize,
+}
+
+impl<'a> BitcoinCoreVarIntReader<'a> {
+    pub fn new(data: &'a [u8]) -> Self {
+        Self { pos: 0, data }
+    }
+
+    pub fn position(&self) -> usize {
+        self.pos
+    }
+
+    pub fn read(&mut self) -> u64 {
+        let (n, size) = decode_bitcoin_core_var_int(&self.data[self.pos..]);
+        self.pos += size;
+        n
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::decode_bitcoin_core_var_int;
+    use hex_literal::hex;
+
+    #[test]
+    fn bitcoin_core_var_int() {
+        assert_eq!(decode_bitcoin_core_var_int(&hex!("")), (0, 0));
+        assert_eq!(decode_bitcoin_core_var_int(&hex!("8eed3c")), (259900, 3));
+        assert_eq!(decode_bitcoin_core_var_int(&hex!("df39")), (12345, 2));
+    }
+}

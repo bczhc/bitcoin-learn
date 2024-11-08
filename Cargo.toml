@@ -18,7 +18,7 @@ num-traits = "0.2.16"
 num-bigint = "0.4.3"
 argon2 = "0.5.1"
 blake3 = { version = "1.4.1", features = ["traits-preview", "digest"] }
-#byteorder = "1.4.3"
+byteorder = "1.4.3"
 #electrum-client = "0.17.0"
 anyhow = "1.0.72"
 #librocksdb-sys = { version = "0.11.0+8.1.1", default-features = true, optional = true }
@@ -37,6 +37,23 @@ bitcoin-block-parser = "0.3.2"
 chrono = "0.4.38"
 crossbeam-channel = "0.5.13"
 base64 = "0.22.1"
+thread_local = "1.1.8"
+num_cpus = "1.16.0"
+once_cell = "1.20.2"
+fern = "0.7.0"
+log = "0.4.22"
+humantime = "2.1.0"
+yeet-ops = "1.0.0"
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.132"
+bczhc_lib = { git = "https://github.com/bczhc/rust" }
+pretty-hex = "0.4.1"
+rusqlite = "0.32.1"
+#bitcoin-leveldb = "0.1.16-alpha.0"
+db-key = "=0.0.5"
+leveldb = "0.8.6"
+bitcoin-varint = "0.1.0"
+bitflags = "2.6.0"
 
 # TODO: my local workaround for the unreleased versions
 [patch.crates-io]
@@ -44,14 +61,15 @@ base58ck = { path = "/home/bczhc/open-source/rust-bitcoin/base58", features = ["
 bitcoin-primitives = { path = "/home/bczhc/open-source/rust-bitcoin/primitives" }
 bitcoin_hashes = { path = "/home/bczhc/open-source/rust-bitcoin/hashes", version = "=0.15.0" }
 bitcoin-internals = { path = "/home/bczhc/open-source/rust-bitcoin/internals" }
+bitcoin-units = { path = "/home/bczhc/open-source/rust-bitcoin/units" }
 
 #[[bin]]
 #name = "demo2"
 #path = "src/demo2.rs"
 
-#[[bin]]
-#name = "demo3"
-#path = "src/demo3.rs"
+[[bin]]
+name = "demo3"
+path = "src/demo3.rs"
 
 [[bin]]
 name = "tx-subscriber"
@@ -140,6 +158,46 @@ path = "src/bisect_keys.rs"
 [[bin]]
 name = "mining"
 path = "src/mining.rs"
+
+[[bin]]
+name = "satoshi-mined-blocks"
+path = "src/satoshi_mined_blocks.rs"
+
+[[bin]]
+name = "tx-double-reward"
+path = "src/tx_double_reward.rs"
+
+[[bin]]
+name = "consensus-endianness"
+path = "src/consensus-endianness.rs"
+
+[[bin]]
+name = "witness"
+path = "src/witness.rs"
+
+[[bin]]
+name = "my-brainwallet"
+path = "src/my_brainwallet.rs"
+
+[[bin]]
+name = "search-op-return"
+path = "src/search-op-return.rs"
+
+[[bin]]
+name = "op-return-extract"
+path = "src/op-return-extract.rs"
+
+[[bin]]
+name = "read-db"
+path = "src/read-db.rs"
+
+[[bin]]
+name = "blk-files"
+path = "src/blk-files.rs"
+
+[[bin]]
+name = "leveldb"
+path = "src/leveldb.rs"
 
 [features]
 #default = ["rocksdb"]
