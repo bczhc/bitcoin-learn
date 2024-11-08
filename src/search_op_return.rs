@@ -1,6 +1,6 @@
 //! Bitcoin OP_RETURN messages: write to SQLite database
 //!
-//! Chinese messages:
+//! Chinese messages: `chinese-op-return-messages.txt`
 
 use bitcoin::{Network, OutPoint, Script, TestnetVersion};
 use bitcoin_demo::{extract_op_return, han_char, new_parser, EncodeHex};

@@ -1,5 +1,6 @@
 //! Search Bitcoin SIGHASH_NONE inputs in Blockchain
 //!
+//! Output: `sighash-none.txt`
 
 use bitcoin::script::ScriptExt;
 use bitcoin::Network;

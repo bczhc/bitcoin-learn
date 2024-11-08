@@ -1,3 +1,7 @@
+[src](../src/fetch_image.rs)
+
+---
+
 从https://gist.github.com/bczhc/0d985a8a6864d9bcb8e1d060f0fd25dd 看到一个有意思的，有位用户在链上通过OP_RETURN放入了一张AVIF图片。
 
 https://mempool.space/address/bc1q3ez0mu6q3y59emtl2nweeevnhu7ualvu3ylapp

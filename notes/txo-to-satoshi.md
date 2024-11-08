@@ -1,3 +1,7 @@
+[src](../src/satoshi_address.rs)
+
+---
+
 Instead of using the more standard P2PKH nowadays, Satoshi originally used P2PK, with this scriptPubKey:
 
 ```
