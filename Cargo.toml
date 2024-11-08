@@ -63,61 +63,21 @@ bitcoin_hashes = { path = "/home/bczhc/open-source/rust-bitcoin/hashes", version
 bitcoin-internals = { path = "/home/bczhc/open-source/rust-bitcoin/internals" }
 bitcoin-units = { path = "/home/bczhc/open-source/rust-bitcoin/units" }
 
-#[[bin]]
-#name = "demo2"
-#path = "src/demo2.rs"
-
 [[bin]]
-name = "demo3"
-path = "src/demo3.rs"
+name = "fetch-image"
+path = "src/fetch_image.rs"
 
 [[bin]]
 name = "tx-subscriber"
 path = "src/tx_subscriber.rs"
 
-#[[bin]]
-#name = "my_brainwallet"
-#path = "src/my_brainwallet.rs"
-
-#[[bin]]
-#name = "brainwallet_db"
-#path = "src/brainwallet_db.rs"
-
-#[[bin]]
-#name = "bip38"
-#path = "src/bip38.rs"
-
-#[[bin]]
-#name = "get_unspent"
-#path = "src/get_unspent.rs"
-
-#[[bin]]
-#name = "get_unspent_ec"
-#path = "src/get_unspent_ec.rs"
-
-#[[bin]]
-#name = "demo4"
-#path = "src/demo4.rs"
-
-[[bin]]
-name = "bip39"
-path = "src/bip39.rs"
-
-#[[bin]]
-#name = "script_demo"
-#path = "src/script_demo.rs"
-
-#[[bin]]
-#name = "rpc_demo"
-#path = "src/rpc_demo.rs"
-#
 [[bin]]
 name = "p2sh"
 path = "src/p2sh.rs"
 
 [[bin]]
 name = "tx-history"
-path = "src/tx-history.rs"
+path = "src/tx_history.rs"
 
 [[bin]]
 name = "signature"
@@ -125,7 +85,7 @@ path = "src/signature.rs"
 
 [[bin]]
 name = "tx-send"
-path = "src/tx-send.rs"
+path = "src/tx_send.rs"
 
 [[bin]]
 name = "ecdsa"
@@ -133,23 +93,23 @@ path = "src/ecdsa.rs"
 
 [[bin]]
 name = "p2sh-redeem-inputs"
-path = "src/p2sh-redeem-inputs.rs"
+path = "src/p2sh_redeem_inputs.rs"
 
 [[bin]]
 name = "tx-send-script-input"
-path = "src/tx-send-script-input.rs"
+path = "src/tx_send_script_input.rs"
 
 [[bin]]
 name = "difficulty"
 path = "src/difficulty.rs"
 
 [[bin]]
-name = "broadcast_raw"
+name = "broadcast-raw"
 path = "src/broadcast_raw.rs"
 
 [[bin]]
 name = "satoshi-address"
-path = "src/satoshi-address.rs"
+path = "src/satoshi_address.rs"
 
 [[bin]]
 name = "bisect-keys"
@@ -169,7 +129,7 @@ path = "src/tx_double_reward.rs"
 
 [[bin]]
 name = "consensus-endianness"
-path = "src/consensus-endianness.rs"
+path = "src/consensus_endianness.rs"
 
 [[bin]]
 name = "witness"
@@ -181,19 +141,19 @@ path = "src/my_brainwallet.rs"
 
 [[bin]]
 name = "search-op-return"
-path = "src/search-op-return.rs"
+path = "src/search_op_return.rs"
 
 [[bin]]
 name = "op-return-extract"
-path = "src/op-return-extract.rs"
+path = "src/op_return_extract.rs"
 
 [[bin]]
 name = "read-db"
-path = "src/read-db.rs"
+path = "src/read_db.rs"
 
 [[bin]]
 name = "blk-files"
-path = "src/blk-files.rs"
+path = "src/blk_files.rs"
 
 [[bin]]
 name = "leveldb"
