@@ -1,3 +1,5 @@
+//! Find the largest valid secp256k1 secret key (the order value - 1) via naive binary-searching
+
 use bitcoin::hex::DisplayHex;
 use bitcoin::secp256k1;
 use bitcoin_demo::EncodeHex;

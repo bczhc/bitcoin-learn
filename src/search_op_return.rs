@@ -1,3 +1,7 @@
+//! Bitcoin OP_RETURN messages: write to SQLite database
+//!
+//! Chinese messages:
+
 use bitcoin::{Network, OutPoint, Script, TestnetVersion};
 use bitcoin_demo::{extract_op_return, han_char, new_parser, EncodeHex};
 use chrono::TimeZone;

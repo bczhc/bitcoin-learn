@@ -1,3 +1,6 @@
+//! Search Bitcoin SIGHASH_NONE inputs in Blockchain
+//!
+
 use bitcoin::script::ScriptExt;
 use bitcoin::Network;
 use bitcoin_demo::new_parser;

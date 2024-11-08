@@ -11,6 +11,7 @@ use bitcoin::{Amount, Network, PrivateKey, PublicKey, Script, TestnetVersion, Tr
 use bitcoin_block_parser::blocks::Options;
 use bitcoin_block_parser::headers::ParsedHeader;
 use bitcoin_block_parser::{BlockParser, DefaultParser, HeaderParser};
+pub use bitcoincore_rpc::bitcoin as bitcoin_old;
 use bitcoincore_rpc::bitcoin::opcodes::all::OP_PUSHBYTES_1;
 use bitcoincore_rpc::{Auth, RpcApi};
 use digest::generic_array::GenericArray;

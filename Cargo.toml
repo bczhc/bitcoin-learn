@@ -78,8 +78,12 @@ name = "p2sh"
 path = "src/p2sh.rs"
 
 [[bin]]
-name = "tx-history"
-path = "src/tx_history.rs"
+name = "search-sighash-none"
+path = "src/search_sighash_none.rs"
+
+[[bin]]
+name = "non-standard-txo"
+path = "src/non_standard_txo.rs"
 
 [[bin]]
 name = "signature"
@@ -98,12 +102,8 @@ name = "p2sh-redeem-inputs"
 path = "src/p2sh_redeem_inputs.rs"
 
 [[bin]]
-name = "tx-send-script-input"
-path = "src/tx_send_script_input.rs"
-
-[[bin]]
 name = "difficulty"
-path = "src/difficulty.rs"
+path = "src/difficulty_ath.rs"
 
 [[bin]]
 name = "broadcast-raw"
@@ -160,6 +160,14 @@ path = "src/blk_files.rs"
 [[bin]]
 name = "leveldb"
 path = "src/leveldb.rs"
+
+[[bin]]
+name = "timelock-create"
+path = "src/timelock/create.rs"
+
+[[bin]]
+name = "timelock-spend"
+path = "src/timelock/spend.rs"
 
 [features]
 #default = ["rocksdb"]

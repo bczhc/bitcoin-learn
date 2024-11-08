@@ -1,5 +1,9 @@
+//! Bitcoin transaction outputs for Satoshi's address
+//!
+#![doc = include_str!("../notes/txo-to-satoshi.md")]
+
 use bitcoin::address::script_pubkey::ScriptBufExt;
-use bitcoin::{Amount, Network, PublicKey, ScriptBuf};
+use bitcoin::{Network, PublicKey, ScriptBuf};
 use bitcoin_demo::{new_parser, EncodeHex};
 use hex_literal::hex;
 
@@ -12,7 +16,6 @@ fn main() -> anyhow::Result<()> {
 
     let mut p2pk_txo_count = 0_u64;
     let mut p2pkh_txo_count = 0_u64;
-    let mut p2pkh_amount = 0_u64;
 
     let parser = new_parser(Network::Bitcoin);
     for (_h, block) in parser {
@@ -20,13 +23,11 @@ fn main() -> anyhow::Result<()> {
             for (index, txo) in tx.output.iter().enumerate() {
                 if txo.script_pubkey.as_bytes() == p2pk_script.as_bytes() {
                     p2pk_txo_count += 1;
-                    // println!("1 {}:{index}", tx.compute_txid());
+                    println!("1 {}:{index}", tx.compute_txid());
                 }
                 if txo.script_pubkey.as_bytes() == p2pkh_script.as_bytes() {
                     p2pkh_txo_count += 1;
-                    p2pkh_amount += txo.value.to_sat();
-                    // println!("2 {}:{index}", tx.compute_txid());
-                    println!("p2pkh: {} BTC", Amount::from_sat(p2pkh_amount).to_btc());
+                    println!("2 {}:{index}", tx.compute_txid());
                 }
             }
         }

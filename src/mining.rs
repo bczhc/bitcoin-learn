@@ -1,3 +1,5 @@
+//! Bitcoin mining for the genesis block
+
 #![feature(bigint_helper_methods)]
 #![feature(decl_macro)]
 

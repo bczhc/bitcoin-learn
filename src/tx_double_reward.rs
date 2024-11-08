@@ -1,3 +1,5 @@
+//! Bitcoin: reward back to the sender!
+
 #![feature(yeet_expr)]
 
 use crate::reward::LocalStorage;
