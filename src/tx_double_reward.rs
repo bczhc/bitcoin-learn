@@ -86,23 +86,8 @@ fn bitcoin_rpc() -> bitcoincore_rpc::Result<Client> {
     )
 }
 
-/// Such things are caused by inconsistent `bitcoin` versions used by this crate
-/// and `bitcoincore_rpc`
-fn bitcoin_old_to_new<
-    Src: bitcoincore_rpc::bitcoin::consensus::Encodable + ?Sized,
-    Dst: bitcoin::consensus::Decodable + ?Sized,
->(
-    src: &Src,
-) -> Dst {
-    let data = bitcoincore_rpc::bitcoin::consensus::serialize(src);
-    bitcoin::consensus::deserialize(&data).unwrap()
-}
-
 mod reward {
-    use crate::{
-        bitcoin_old_to_new, reward, FEE, NETWORK, RETURN_RATE, REWARD_SOURCE_WIF, RPC,
-        TO_REWARD_ADDRESS,
-    };
+    use crate::{reward, FEE, NETWORK, RETURN_RATE, REWARD_SOURCE_WIF, RPC, TO_REWARD_ADDRESS};
     use anyhow::anyhow;
     use bitcoin::absolute::LockTime;
     use bitcoin::address::script_pubkey::BuilderExt;
@@ -114,7 +99,7 @@ mod reward {
         consensus, Address, Amount, EcdsaSighashType, OutPoint, PublicKey, Script, ScriptBuf,
         Sequence, Transaction, TxIn, TxOut, Txid,
     };
-    use bitcoin_demo::EncodeHex;
+    use bitcoin_demo::{bitcoin_old_to_new, EncodeHex};
     use bitcoin_hashes::Hash;
     use bitcoincore_rpc::RpcApi;
     use log::{debug, info};

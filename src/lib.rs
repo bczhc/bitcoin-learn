@@ -41,28 +41,6 @@ pub fn secret_to_pubkey_uncompressed(k1: &Secp256k1<All>, bytes: &[u8]) -> Publi
     pk.public_key(k1)
 }
 
-#[derive(Debug, Clone)]
-pub struct EcDerived {
-    pub private_key: PrivateKey,
-    pub public_key: PublicKey,
-    pub p2pkh: Address,
-    pub p2wpkh: Address,
-}
-
-pub fn ec_derive(ec: &[u8; 32]) -> EcDerived {
-    // let s = Secp256k1::new();
-    // let private_key = PrivateKey::from_slice(ec, Network::Bitcoin).unwrap();
-    // let public_key = private_key.public_key(&s);
-    // let p2wpkh = Address::p2wpkh(&public_key, Network::Bitcoin).unwrap();
-    // EcDerived {
-    //     private_key,
-    //     public_key,
-    //     p2wpkh,
-    //     p2pkh: Address::p2pkh(&public_key, Network::Bitcoin),
-    // }
-    todo!()
-}
-
 #[inline]
 pub fn sha256(data: &[u8]) -> [u8; 32] {
     hash_iter::<Sha256>(data, 1)
@@ -83,6 +61,17 @@ pub fn blake3(data: &[u8]) -> [u8; 32] {
     hash_iter::<blake3::Hasher>(data, 1)
 }
 
+/// Hash data one or multiple times.
+///
+/// # Exapmles
+///
+/// ```
+/// use hex_literal::hex;
+/// use bitcoin_demo::hash_iter;
+///
+/// let data = b"hello";
+/// assert_eq!(hash_iter::<sha2::Sha256>(data, 2), hex!("9595c9df90075148eb06860365df33584b75bff782a510c6cd4883a419833d50"));
+/// ```
 pub fn hash_iter<H>(data: &[u8], iter_num: u64) -> [u8; H::OutputSize::USIZE]
 where
     H: Digest + FixedOutput + OutputSizeUser,
@@ -260,11 +249,24 @@ macro_rules! script_hex {
 }
 
 pub trait BitcoinAmountExt {
-    const DUST_MIN: Amount = Amount::from_sat(999);
+    const DUST_MIN: Amount = Amount::from_sat(1000);
 }
 
 impl BitcoinAmountExt for Amount {}
 
+/// Extract the data from an `OP_RETURN` script.
+///
+/// # Examples
+///
+/// ```
+/// use bitcoin::script::ScriptBufExt;
+/// use bitcoin::ScriptBuf;
+/// use bitcoin_demo::extract_op_return;
+///
+/// let script = ScriptBuf::new_op_return(b"hello");
+/// let extracted = extract_op_return(&script);
+/// assert_eq!(extracted, Some(&b"hello"[..]));
+/// ```
 pub fn extract_op_return(script: &Script) -> Option<&[u8]> {
     if !script.is_op_return() {
         return None;
@@ -299,6 +301,7 @@ pub fn extract_op_return(script: &Script) -> Option<&[u8]> {
     None
 }
 
+/// Han characters with punctuations.
 pub fn han_char(c: char) -> bool {
     if "，。《》？！【】〔〕「」·—：；“”‘’…"
         .chars()
@@ -372,6 +375,29 @@ impl<'a> BitcoinCoreVarIntReader<'a> {
         self.pos += size;
         n
     }
+}
+
+/// Such things are caused by inconsistent `bitcoin` versions used by this crate
+/// and `bitcoincore_rpc`
+///
+/// # Examples
+///
+/// ```rust
+/// use bitcoincore_rpc::bitcoin as old;
+/// use bitcoin_demo::bitcoin_old_to_new;
+///
+/// let old_amount = old::Amount::from_sat(1000);
+/// let new_amount: bitcoin::Amount = bitcoin_old_to_new(&old_amount);
+/// assert_eq!(old_amount.to_sat(), new_amount.to_sat());
+/// ```
+pub fn bitcoin_old_to_new<
+    Src: bitcoincore_rpc::bitcoin::consensus::Encodable + ?Sized,
+    Dst: bitcoin::consensus::Decodable + ?Sized,
+>(
+    src: &Src,
+) -> Dst {
+    let data = bitcoincore_rpc::bitcoin::consensus::serialize(src);
+    bitcoin::consensus::deserialize(&data).unwrap()
 }
 
 #[cfg(test)]
