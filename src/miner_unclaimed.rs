@@ -5,7 +5,7 @@
 //!
 //! This runs ~40 minutes and takes ~40 GiB of memory.
 //!
-//! Output: `miner-unclaimed.txt`
+//! Output: `miner-unclaimed.csv`
 
 use bitcoin::Network;
 use bitcoin_block_parser::blocks::Options;
