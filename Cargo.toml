@@ -119,8 +119,8 @@ name = "bisect-keys"
 path = "src/bisect_keys.rs"
 
 [[bin]]
-name = "mining"
-path = "src/mining.rs"
+name = "mine-genesis"
+path = "src/mine_genesis.rs"
 
 [[bin]]
 name = "satoshi-mined-blocks"
@@ -185,6 +185,14 @@ path = "src/send_op_return_inscription.rs"
 [[bin]]
 name = "send-op-return-inscription2"
 path = "src/send_op_return_inscription2.rs"
+
+[[bin]]
+name = "mine-testnet4"
+path = "src/mine_testnet4.rs"
+
+[[bin]]
+name = "deserialize"
+path = "src/deserialize.rs"
 
 [[bin]]
 name = "rpc"
