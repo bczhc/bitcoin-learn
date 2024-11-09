@@ -33,12 +33,3 @@ fn main() -> anyhow::Result<()> {
     }
     Ok(())
 }
-
-fn filter_script(s: &Script) -> bool {
-    !(s.is_p2pkh()
-        || s.is_p2sh()
-        || s.is_p2wpkh()
-        || s.is_op_return()
-        || s.first_opcode() == Some(OP_PUSHNUM_1)
-        || s.first_opcode() == Some(OP_0))
-}
