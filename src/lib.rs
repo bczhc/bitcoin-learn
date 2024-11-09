@@ -3,12 +3,17 @@
 #![feature(inline_const_pat)]
 
 use bczhc_lib::char::han_char_range;
-use bitcoin::absolute::encode;
+use bitcoin::absolute::{encode, LockTime};
+use bitcoin::address::script_pubkey::BuilderExt;
 use bitcoin::key::Secp256k1;
 use bitcoin::opcodes::all::{OP_PUSHBYTES_75, OP_PUSHDATA1};
-use bitcoin::script::{PushBytes, ScriptExt};
+use bitcoin::script::{PushBytes, ScriptBufExt, ScriptExt};
 use bitcoin::secp256k1::{All, Message, SecretKey};
-use bitcoin::{Amount, Network, PrivateKey, PublicKey, Script, TestnetVersion, Transaction};
+use bitcoin::transaction::Version;
+use bitcoin::{
+    consensus, Address, Amount, Network, OutPoint, PrivateKey, PublicKey, Script, ScriptBuf,
+    Sequence, TestnetVersion, Transaction, TxIn, Txid,
+};
 use bitcoin_block_parser::blocks::Options;
 use bitcoin_block_parser::headers::ParsedHeader;
 use bitcoin_block_parser::{BlockParser, DefaultParser, HeaderParser};
@@ -256,10 +261,59 @@ pub fn confirm_to_broadcast_raw(raw_tx: &[u8]) {
     println!("{:?}", result);
 }
 
+pub fn broadcast_tx(tx: &Transaction) -> anyhow::Result<Txid> {
+    let rpc = bitcoin_rpc_testnet4()?;
+    let raw_tx = consensus::serialize(tx);
+    let txid = rpc.send_raw_transaction(&raw_tx)?;
+    let txid: Txid = bitcoin_old_to_new(&txid);
+    Ok(txid)
+}
+
 pub fn confirm_to_broadcast(tx: &Transaction) {
     let serialized = encode::serialize(tx);
     println!("Transaction: {}", serialized.hex());
     confirm_to_broadcast_raw(&serialized);
+}
+
+const FEE_RATE: f64 = 1.4;
+pub fn estimate_fee(tx: &Transaction) -> Amount {
+    let size = consensus::serialize(tx).len() + ESTIMATED_SCRIPT_SIG_SIZE * 1;
+    Amount::from_sat((size as f64 * FEE_RATE) as u64)
+}
+
+pub const TESTNET4: Network = Network::Testnet(TestnetVersion::V4);
+
+pub fn wait_new_line() {
+    stdin().read_line(&mut String::new()).unwrap();
+}
+
+pub fn prompt_wait_new_line() {
+    print!("Wait for enter key...");
+    stdout().flush().unwrap();
+    wait_new_line();
+}
+
+/// Limit every output to use up to 75 bytes. Because we have an opcode
+/// [`OP_PUSHBYTES_75`] that pushes the most among `PUSHBYTES_*` group.
+pub const OP_RETURN_IDEAL_MAX: usize = 75;
+
+pub fn ideal_checked_op_return(data: &[u8]) -> ScriptBuf {
+    assert!(data.len() <= OP_RETURN_IDEAL_MAX);
+    ScriptBuf::new_op_return(<&PushBytes>::try_from(data).unwrap())
+}
+
+pub fn broadcast_tx_retry(tx: &Transaction) -> Txid {
+    let new_txid = loop {
+        let result = broadcast_tx(&tx);
+        match result {
+            Ok(x) => break x,
+            Err(e) => {
+                println!("Failed to broadcast. Press enter to retry. Error: {}", e);
+                prompt_wait_new_line();
+            }
+        }
+    };
+    new_txid
 }
 
 #[macro_export]
@@ -551,6 +605,84 @@ impl IntervalLogger {
             // reset the start time
             self.start = timestamp_ms / 1000;
         }
+    }
+}
+
+/// Builds a concrete transaction for most common/trivial uses, with one dummy input and no output.
+pub fn default_tx() -> Transaction {
+    Transaction {
+        version: Version::ONE,
+        lock_time: LockTime::ZERO,
+        input: vec![TxIn {
+            previous_output: OutPoint::COINBASE_PREVOUT,
+            sequence: Sequence::FINAL,
+            witness: Default::default(),
+            script_sig: Default::default(),
+        }],
+        output: vec![],
+    }
+}
+
+pub fn parse_address(addr: &str, network: Network) -> anyhow::Result<Address> {
+    Ok(addr.parse::<Address<_>>()?.require_network(network)?)
+}
+
+pub fn wif_to_secret(wif: &str) -> anyhow::Result<SecretKey> {
+    Ok(PrivateKey::from_wif(wif)?.inner)
+}
+
+pub fn wif_to_pubkey(wif: &str) -> anyhow::Result<PublicKey> {
+    Ok(PrivateKey::from_wif(wif)?.public_key(&Default::default()))
+}
+
+pub trait ScriptBufExt2 {
+    fn p2pkh_script_sig(
+        signature: impl AsRef<[u8]>,
+        pubkey: impl Into<PublicKey>,
+    ) -> anyhow::Result<ScriptBuf> {
+        Ok(ScriptBuf::builder()
+            .push_slice_try_from(signature.as_ref())?
+            .push_key(pubkey.into())
+            .into_script())
+    }
+}
+
+impl ScriptBufExt2 for ScriptBuf {}
+
+/// https://bitcoin.stackexchange.com/a/77192/159523
+pub const MAX_SIGNATURE_LENGTH: usize = 73;
+pub const COMPRESSED_PUBKEY_LENGTH: usize = 1 /* prefix */
+    + 32 /* an ECDSA point */;
+
+pub const UNCOMPRESSED_PUBKEY_LENGTH: usize = COMPRESSED_PUBKEY_LENGTH + 32 /* another ECDSA point */;
+pub const ESTIMATED_SCRIPT_SIG_SIZE: usize = 1 /* PUSHBYTES_XX */
+    + MAX_SIGNATURE_LENGTH /* signature */
+    + 1 /* PUSHBYTES_XX */
+    + COMPRESSED_PUBKEY_LENGTH /* public key (compressed) */;
+
+pub mod signing_helper {
+    use crate::{wif_to_pubkey, wif_to_secret, ScriptBufExt2};
+    use bitcoin::secp256k1::{Message, Secp256k1};
+    use bitcoin::sighash::SighashCache;
+    use bitcoin::{EcdsaSighashType, Script, ScriptBuf, Transaction};
+
+    pub fn one_input_sign(
+        wif: &str,
+        tx: &mut Transaction,
+        script_pubkey: impl AsRef<Script>,
+    ) -> anyhow::Result<()> {
+        let cache = SighashCache::new(tx.clone());
+        let hash =
+            cache.legacy_signature_hash(0, script_pubkey.as_ref(), EcdsaSighashType::All as u32)?;
+        let message = Message::from_digest(hash.to_byte_array());
+        let mut signature = Secp256k1::default()
+            .sign_ecdsa(&message, &wif_to_secret(wif)?)
+            .serialize_der()
+            .to_vec();
+        signature.push(EcdsaSighashType::All as u8);
+
+        tx.input[0].script_sig = ScriptBuf::p2pkh_script_sig(signature, wif_to_pubkey(wif)?)?;
+        Ok(())
     }
 }
 

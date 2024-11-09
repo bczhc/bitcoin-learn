@@ -178,6 +178,18 @@ path = "src/miner_unclaimed.rs"
 name = "utxo-tracking"
 path = "src/utxo_tracking.rs"
 
+[[bin]]
+name = "send-op-return-inscription"
+path = "src/send_op_return_inscription.rs"
+
+[[bin]]
+name = "send-op-return-inscription2"
+path = "src/send_op_return_inscription2.rs"
+
+[[bin]]
+name = "rpc"
+path = "src/rpc.rs"
+
 [features]
 #default = ["rocksdb"]
 #rocksdb = ["dep:librocksdb-sys", "dep:rocksdb"]
