@@ -1,12 +1,11 @@
 use bitcoin::consensus::Decodable;
-use bitcoin::{Block, BlockHash};
+use bitcoin::{Block, BlockHash, Transaction, Txid};
 use bitcoin_demo::{BitcoinCoreVarIntReader, EncodeHex, XorReader};
 use bitflags::bitflags;
 use leveldb::database::Database;
 use leveldb::kv::KV;
 use leveldb::options::{Options, ReadOptions};
 use std::fs::File;
-use std::io;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::Path;
 
@@ -51,6 +50,15 @@ impl DbKey for BlockHash {
     }
 }
 
+impl DbKey for Txid {
+    fn as_key(&self) -> DbKeyBytes {
+        let mut key = [0_u8; size_of::<DbKeyBytes>()];
+        key[0] = b't' /* transaction */;
+        key[1..].clone_from_slice(self.as_byte_array());
+        key
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 struct KeyWrapper<T: DbKey>(T);
@@ -75,7 +83,22 @@ fn main() -> anyhow::Result<()> {
         let block = get_block(b.parse()?)?;
         println!("{}", block.block_hash());
     }
+
+    // let txid: Txid = "4e863fabab880cc0cabe1c86ec75e757d75a9c2613cbf35b2e51d944576b4ac0".parse()?;
+    // println!("{:?}", get_transaction(txid));
     Ok(())
+}
+
+fn get_transaction(txid: Txid) -> anyhow::Result<Transaction> {
+    let db = Database::open(
+        Path::new("/mnt/nvme/bitcoin/bitcoind/data/indexes/txindex"),
+        Options::new(),
+    )?;
+
+    let opts = ReadOptions::<KeyWrapper<Txid>>::new();
+    let value = db.get(opts, KeyWrapper(txid))?.expect("No record found");
+    println!("{}", value.hex());
+    Ok(todo!())
 }
 
 fn get_block(block_hash: BlockHash) -> anyhow::Result<Block> {

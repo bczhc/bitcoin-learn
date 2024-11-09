@@ -1,5 +1,6 @@
 #![allow(incomplete_features, const_evaluatable_unchecked)]
 #![feature(generic_const_exprs)]
+#![feature(inline_const_pat)]
 
 use bczhc_lib::char::han_char_range;
 use bitcoin::absolute::encode;
@@ -106,11 +107,18 @@ macro_rules! hash {
     };
 }
 
-pub fn timestamp() -> u64 {
+pub fn timestamp_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_millis() as u64
+}
+
+pub fn timestamp() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
 }
 
 pub fn cli_args() -> Vec<String> {
@@ -477,6 +485,72 @@ impl<R: Read> Read for XorReader<R> {
             *x ^= self.xor.next();
         }
         Ok(size)
+    }
+}
+
+const INITIAL_BLOCK_REWARD: u64 = 50_0000_0000 /* 50 BTC */;
+
+/// Block reward by height
+///
+/// # Examples
+///
+/// ```rust
+/// use bitcoin_demo::bitcoin_block_reward;
+///
+/// assert_eq!(bitcoin_block_reward(839999), 6_25000000);
+/// assert_eq!(bitcoin_block_reward(840000), 3_12500000);
+/// ```
+pub fn bitcoin_block_reward(height: u32) -> u64 {
+    const INTERVAL: u32 = 210_000;
+    match height {
+        const { INTERVAL * 0 }..const { INTERVAL * 1 } => INITIAL_BLOCK_REWARD / 1,
+        const { INTERVAL * 1 }..const { INTERVAL * 2 } => INITIAL_BLOCK_REWARD / 2,
+        const { INTERVAL * 2 }..const { INTERVAL * 3 } => INITIAL_BLOCK_REWARD / 4,
+        const { INTERVAL * 3 }..const { INTERVAL * 4 } => INITIAL_BLOCK_REWARD / 8,
+        const { INTERVAL * 4 }..const { INTERVAL * 5 } => INITIAL_BLOCK_REWARD / 16,
+        const { INTERVAL * 5 }..const { INTERVAL * 6 } => INITIAL_BLOCK_REWARD / 32,
+        _ => unimplemented!(),
+    }
+}
+
+pub fn set_up_logging(level: log::LevelFilter, file: Option<&str>) -> anyhow::Result<()> {
+    let mut dispatch = fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "[{} {} {}] {}",
+                humantime::format_rfc3339(std::time::SystemTime::now()),
+                record.level(),
+                record.target(),
+                message
+            ))
+        })
+        .level(level)
+        .chain(stdout());
+    if let Some(f) = file {
+        dispatch = dispatch.chain(fern::log_file(f)?);
+    }
+    dispatch.apply()?;
+    Ok(())
+}
+
+pub struct IntervalLogger {
+    start: u64,
+}
+
+impl IntervalLogger {
+    pub fn new() -> Self {
+        Self { start: timestamp() }
+    }
+
+    pub fn log(&mut self, f: impl FnOnce()) {
+        let timestamp_ms = timestamp_ms();
+        if timestamp_ms / 1000 == self.start {
+            // this is called within one second, ignored
+        } else {
+            f();
+            // reset the start time
+            self.start = timestamp_ms / 1000;
+        }
     }
 }
 

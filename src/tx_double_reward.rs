@@ -4,9 +4,10 @@
 
 use crate::reward::LocalStorage;
 use bitcoin::{Amount, Network, OutPoint, ScriptBuf, TestnetVersion};
+use bitcoin_demo::set_up_logging;
 use bitcoin_hashes::Hash;
 use bitcoincore_rpc::{Auth, Client, RpcApi};
-use log::{debug, info};
+use log::{debug, info, LevelFilter};
 use once_cell::sync::Lazy;
 use std::io;
 use std::ops::AddAssign;
@@ -40,7 +41,7 @@ const BITCOIN_RPC_ADDRESS: &str = match NETWORK {
 };
 
 fn main() -> anyhow::Result<()> {
-    set_up_logging("./tx-double-reward.log")?;
+    set_up_logging(LevelFilter::Debug, Some("./tx-double-reward.log"))?;
     info!("ZMQ address: {ZMQ_ADDRESS}");
     info!("Bitcoin-core RPC address: {BITCOIN_RPC_ADDRESS}");
     info!("Reward source WIF: {REWARD_SOURCE_WIF}");
@@ -327,22 +328,4 @@ mod reward {
             )?)
         }
     }
-}
-
-pub fn set_up_logging(file: impl AsRef<Path>) -> anyhow::Result<()> {
-    fern::Dispatch::new()
-        .format(|out, message, record| {
-            out.finish(format_args!(
-                "[{} {} {}] {}",
-                humantime::format_rfc3339(std::time::SystemTime::now()),
-                record.level(),
-                record.target(),
-                message
-            ))
-        })
-        .level(log::LevelFilter::Debug)
-        .chain(io::stdout())
-        .chain(fern::log_file(file)?)
-        .apply()?;
-    Ok(())
 }

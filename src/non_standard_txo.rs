@@ -1,6 +1,6 @@
 //! Search nonstandard and abnormal unspent Bitcoin UTXO in Blockchain
 //!
-//! Output: `non_standard_txo.txt`
+//! Output: `non-standard-txo.txt`
 
 use bitcoin::script::ScriptExt;
 use bitcoin_block_parser::blocks::Options;
