@@ -674,7 +674,7 @@ pub const ESTIMATED_SCRIPT_SIG_SIZE: usize = 1 /* PUSHBYTES_XX */
 
 pub mod signing_helper {
     use crate::{wif_to_pubkey, wif_to_secret, ScriptBufExt2};
-    use bitcoin::secp256k1::{Message, Secp256k1};
+    use bitcoin::secp256k1::{Message, Secp256k1, SecretKey};
     use bitcoin::sighash::SighashCache;
     use bitcoin::{EcdsaSighashType, Script, ScriptBuf, Transaction};
 
@@ -683,18 +683,36 @@ pub mod signing_helper {
         tx: &mut Transaction,
         script_pubkey: impl AsRef<Script>,
     ) -> anyhow::Result<()> {
+        let signature = one_input_signature(wif, tx, script_pubkey)?;
+        tx.input[0].script_sig = ScriptBuf::p2pkh_script_sig(signature, wif_to_pubkey(wif)?)?;
+        Ok(())
+    }
+
+    pub fn one_input_signature(
+        wif: &str,
+        tx: &Transaction,
+        script_pubkey: impl AsRef<Script>,
+    ) -> anyhow::Result<Vec<u8>> {
         let cache = SighashCache::new(tx.clone());
         let hash =
             cache.legacy_signature_hash(0, script_pubkey.as_ref(), EcdsaSighashType::All as u32)?;
-        let message = Message::from_digest(hash.to_byte_array());
+        let signature = sign_sighash(hash, &wif_to_secret(wif)?, EcdsaSighashType::All);
+        Ok(signature)
+    }
+
+    /// Returns the bitcoin signature: `(<ecdsa-signature> <sighash-flag>)`
+    pub fn sign_sighash(
+        sighash: impl AsRef<[u8]>,
+        secret: &SecretKey,
+        sighash_flag: EcdsaSighashType,
+    ) -> Vec<u8> {
+        let message = Message::from_digest(sighash.as_ref().try_into().expect("Length must be 32"));
         let mut signature = Secp256k1::default()
-            .sign_ecdsa(&message, &wif_to_secret(wif)?)
+            .sign_ecdsa(&message, secret)
             .serialize_der()
             .to_vec();
-        signature.push(EcdsaSighashType::All as u8);
-
-        tx.input[0].script_sig = ScriptBuf::p2pkh_script_sig(signature, wif_to_pubkey(wif)?)?;
-        Ok(())
+        signature.push(sighash_flag as u8);
+        signature
     }
 }
 

@@ -136,8 +136,12 @@ name = "consensus-endianness"
 path = "src/consensus_endianness.rs"
 
 [[bin]]
-name = "witness"
-path = "src/witness.rs"
+name = "send-to-p2wpkh"
+path = "src/segwit/send_to_p2wpkh.rs"
+
+[[bin]]
+name = "spend-p2wpkh"
+path = "src/segwit/spend_p2wpkh.rs"
 
 [[bin]]
 name = "my-brainwallet"
