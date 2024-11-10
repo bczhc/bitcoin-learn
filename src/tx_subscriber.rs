@@ -1,6 +1,4 @@
 use bitcoin::consensus::deserialize;
-use bitcoin::opcodes::all::OP_PUSHNUM_1;
-use bitcoin::opcodes::OP_0;
 use bitcoin::script::ScriptExt;
 use bitcoin::{Script, Transaction};
 use zmq::SocketType;

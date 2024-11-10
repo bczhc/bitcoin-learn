@@ -232,6 +232,7 @@ dependencies = [
  "argon2",
  "base64 0.22.1",
  "bczhc_lib",
+ "bech32",
  "bitcoin 0.33.0-alpha",
  "bitcoin-block-parser",
  "bitcoin-varint",

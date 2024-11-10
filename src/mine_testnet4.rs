@@ -14,8 +14,9 @@
 //! still should be waited, or you'll get a `time-too-new` error when submitting the mined block.
 //!
 //! Lots of nodes may have mined lots of blocks, just waiting for the correct moment
-//! to broadcast them. Thus, it turns to a time/network competition but not the computation
-//! power competition. I got no luck to make my block shown on the explorer websites - so, how
+//! to broadcast them. Thus, it turns to a time/network/chance competition but not the computation
+//! power competition. I got no luck making my block shown on the explorer websites - so, when
+//! it's a chance competition, lots of nodes submit blocks at the same time, how
 //! can I ensure the block *I mined* can be the longest chain in the network?
 
 use bitcoin::absolute::LockTime;
@@ -32,7 +33,6 @@ use bitcoin_demo::{
 use bitcoincore_rpc::RpcApi;
 use byteorder::{WriteBytesExt, LE};
 use chrono::{DateTime, Local};
-use std::process::exit;
 use std::str::FromStr;
 use std::thread::sleep;
 use std::time::Duration;
@@ -95,24 +95,23 @@ fn main() -> anyhow::Result<()> {
         println!("Bip34 block height: {:?}", block.bip34_block_height());
 
         println!("{:?}", block);
-        mining::mine(
-            block.clone(),
-            Some(move |n| {
-                let mut block = block.clone();
-                block.header.nonce = n;
-                println!("{}", block.block_hash());
-                loop {
-                    let result = rpc.submit_block(&bitcoin_new_to_old(&block));
-                    println!("Submit block: {}", consensus::serialize(&block).hex());
-                    format!("{:?}", result);
-                    if result.is_ok() {
-                        break;
-                    }
-                    sleep(Duration::from_secs(1));
+        let result = mining::mine(block.clone());
+        if let Some(n) = result {
+            let mut block = block.clone();
+            block.header.nonce = n;
+            println!("{}", block.block_hash());
+            loop {
+                let result = rpc.submit_block(&bitcoin_new_to_old(&block));
+                println!("Submit block: {}", consensus::serialize(&block).hex());
+                format!("{:?}", result);
+                if result.is_ok() {
+                    break;
                 }
-                exit(0);
-            }),
-        );
+                sleep(Duration::from_secs(1));
+            }
+            break Ok(());
+        }
+
         i += 1;
     }
 }

@@ -57,6 +57,7 @@ leveldb = "0.8.6"
 bitcoin-varint = "0.1.0"
 bitflags = "2.6.0"
 csv = "1.3.0"
+bech32 = "0.11.0"
 
 # TODO: my local workaround for the unreleased versions
 [patch.crates-io]
@@ -197,6 +198,18 @@ path = "src/deserialize.rs"
 [[bin]]
 name = "rpc"
 path = "src/rpc.rs"
+
+[[bin]]
+name = "block-time-interval"
+path = "src/block_time_interval.rs"
+
+[[bin]]
+name = "temporary"
+path = "src/temp.rs"
+
+[[bin]]
+name = "bech32"
+path = "src/bech32.rs"
 
 [features]
 #default = ["rocksdb"]

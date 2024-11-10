@@ -706,7 +706,9 @@ pub mod mining {
     use std::fmt;
     use std::fmt::{Display, Formatter};
     use std::ops::Add;
-    use std::sync::{Arc, Mutex};
+    use std::sync::atomic::AtomicBool;
+    use std::sync::mpsc::{channel, Sender};
+    use std::sync::{atomic, Arc};
     use std::thread::spawn;
 
     #[derive(Clone)]
@@ -824,7 +826,7 @@ pub mod mining {
         assert_eq!(num.to_ne_bytes(), hex!("0000000000000099 8877665544332211"));
     }
 
-    pub fn mine(block: Block, on_mined: Option<impl Fn(u32) + Sized + Send + Sync + 'static>) {
+    pub fn mine(block: Block) -> Option<u32> {
         assert_little_endianness();
 
         let threads = num_cpus::get() as u32;
@@ -852,14 +854,28 @@ pub mod mining {
 
         let part = ((u32::MAX as u64 + 1) / threads as u64) as u32;
         let mut join_handlers = Vec::new();
-        let on_mined = Arc::new(Mutex::new(on_mined));
+        let result_channel = channel();
+        struct Context {
+            result_sender: Sender<u32>,
+            stop: AtomicBool,
+            target: Uint256,
+        }
+        let context = Arc::new(Context {
+            stop: AtomicBool::new(false),
+            result_sender: result_channel.0,
+            target,
+        });
         for i in 0..threads {
             let mut raw_header = RawBlockHeader::from(&block);
             let range = (part * i)..=(part * i + (part - 1));
-            let target = target.clone();
-            let on_mined = Arc::clone(&on_mined);
+            let context = Arc::clone(&context);
             let handler = spawn(move || {
+                let target = context.target;
                 for nonce in range {
+                    if context.stop.load(atomic::Ordering::SeqCst) {
+                        break;
+                    }
+
                     raw_header.change_nonce(nonce);
                     if check_target(&raw_header, &target) {
                         println!(
@@ -867,10 +883,8 @@ pub mod mining {
                             raw_header.block_hash_display(),
                             nonce
                         );
-                        let f = &*on_mined.lock().unwrap();
-                        if let Some(f) = f {
-                            f(nonce);
-                        }
+                        context.result_sender.send(nonce).unwrap();
+                        context.stop.store(true, atomic::Ordering::SeqCst);
                     }
                 }
             });
@@ -878,11 +892,14 @@ pub mod mining {
         }
 
         join_handlers.into_iter().for_each(|x| x.join().unwrap());
+
+        result_channel.1.try_recv().ok()
     }
 
     #[cfg(test)]
     mod test {
         use crate::mining::assert_little_endianness;
+        use crate::mining::Uint256;
         use hex_literal::hex;
 
         #[test]
