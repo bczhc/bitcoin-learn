@@ -224,6 +224,10 @@ path = "src/segwit/send_to_p2wsh.rs"
 name = "spend-p2wsh"
 path = "src/segwit/spend_p2wsh.rs"
 
+[[bin]]
+name = "p2wsh-inscription"
+path = "src/segwit/p2wsh_inscription.rs"
+
 [features]
 #default = ["rocksdb"]
 #rocksdb = ["dep:librocksdb-sys", "dep:rocksdb"]
