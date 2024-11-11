@@ -3,6 +3,7 @@
 #![feature(inline_const_pat)]
 #![feature(decl_macro)]
 #![feature(bigint_helper_methods)]
+// #![feature(type_alias_impl_trait)]
 
 use bczhc_lib::char::han_char_range;
 use bitcoin::absolute::{encode, LockTime};
@@ -28,8 +29,10 @@ use digest::{Digest, FixedOutput, OutputSizeUser};
 use rand::rngs::OsRng;
 use rand::RngCore;
 use sha2::Sha256;
+use std::collections::Bound;
 use std::env::args;
 use std::io::{stdin, stdout, Read, Write};
+use std::ops::{Index, RangeBounds};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn random_secret_key() -> SecretKey {
@@ -217,11 +220,12 @@ pub fn block_parser(
     (0..=height).zip(parser.into_iter().map(Result::unwrap))
 }
 
+macro block_iter_type() {
+    impl IntoIterator<Item = (u32, bitcoincore_rpc::bitcoin::Block)>
+}
+
 /// Only takes the recent `block_count` blocks.
-pub fn block_parser_recent(
-    network: Network,
-    block_count: usize,
-) -> impl IntoIterator<Item = (usize, bitcoincore_rpc::bitcoin::Block)> {
+pub fn block_parser_recent(network: Network, block_count: usize) -> block_iter_type!() {
     let headers = parse_headers(network);
     let start = headers.len() - block_count;
     let selected_headers = &headers[start..];
@@ -230,7 +234,38 @@ pub fn block_parser_recent(
     let options = Options::default().order_output();
     let parser = DefaultParser.parse_with_opts(selected_headers, options);
     (selected_height_start..(selected_height_start + block_count))
+        .map(|x| x as u32)
         .zip(parser.into_iter().map(Result::unwrap))
+}
+
+pub fn block_parser_range(range: impl RangeBounds<u32>, network: Network) -> block_iter_type!() {
+    let headers = parse_headers(network);
+    let start = match range.start_bound() {
+        Bound::Included(&x) => x,
+        Bound::Excluded(_) => unimplemented!(),
+        Bound::Unbounded => 0,
+    };
+    let end = match range.end_bound() {
+        Bound::Included(&x) => x,
+        Bound::Excluded(&x) => {
+            if x == start {
+                // return [].into_iter()
+                panic!("Range is empty")
+            } else {
+                x - 1
+            }
+        }
+        Bound::Unbounded => headers.len() as u32 - 1,
+    };
+
+    let range = &headers[start as usize..=end as usize];
+
+    let options = Options::default().order_output();
+    let parser = DefaultParser
+        .parse_with_opts(range, options)
+        .into_iter()
+        .map(Result::unwrap);
+    (start..=end).into_iter().zip(parser)
 }
 
 pub trait ScriptsBuilderExt
@@ -357,6 +392,9 @@ pub fn extract_op_return(script: &Script) -> Option<&[u8]> {
     }
 
     // OP_RETURN <OP_PUSHBYTES_1..=OP_PUSHBYTES_75> <data>
+    if bytes.get(1).is_none() {
+        return None;
+    }
     if (OP_PUSHBYTES_1.to_u8()..=OP_PUSHBYTES_75.to_u8()).contains(&bytes[1]) {
         let pushed_len = (bytes[1] - OP_PUSHBYTES_1.to_u8() + 1) as usize;
         if bytes.len() - 2 < pushed_len {
@@ -367,6 +405,9 @@ pub fn extract_op_return(script: &Script) -> Option<&[u8]> {
     }
 
     // OP_RETURN <OP_PUSHDATA1> <length> <data>
+    if bytes.get(1).is_none() || bytes.get(2).is_none() {
+        return None;
+    }
     if bytes[1] == OP_PUSHDATA1.to_u8() {
         let len = bytes[2] as usize;
         if bytes.len() - 3 < len {

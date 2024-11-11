@@ -10,7 +10,7 @@ fn main() {
         vout: u32,
     }
 
-    let db = Connection::open("./op-return-messages.db").unwrap();
+    let db = Connection::open("./op-return-messages-testnet4.db").unwrap();
     let mut stmt = db
         .prepare("select * from op_return_msg order by block_timestamp")
         .unwrap();

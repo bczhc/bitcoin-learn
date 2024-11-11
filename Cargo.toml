@@ -10,7 +10,7 @@ rand = "0.8.5"
 #bip38 = "1.1.0"
 hex = "0.4.3"
 zmq = "0.10.0"
-#tokio = { version = "1.29.1", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.41.1", features = ["macros", "rt-multi-thread"] }
 #reqwest = "0.11.18"
 sha2 = "0.10.7"
 digest = "0.10.7"
@@ -51,6 +51,7 @@ serde_json = "1.0.132"
 bczhc_lib = { git = "https://github.com/bczhc/rust" }
 pretty-hex = "0.4.1"
 rusqlite = "0.32.1"
+#sqlx = { version = "0.8.2", features = ["sqlite", "derive"] }
 #bitcoin-leveldb = "0.1.16-alpha.0"
 db-key = "=0.0.5"
 leveldb = "0.8.6"

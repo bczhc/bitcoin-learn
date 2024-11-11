@@ -1,14 +1,25 @@
-//! Bitcoin OP_RETURN messages: write to SQLite database
+//! Bitcoin OP_RETURN messages: write to SQLite database.
 //!
-//! Mainnet Chinese messages: `chinese-op-return-messages.txt`
+//! Supports incremental database creation.
+//!
+//! Chinese messages: `output/op-return-chinese/<network>.txt`
 
-use bitcoin::{Network, OutPoint, Script, TestnetVersion};
-use bitcoin_demo::{extract_op_return, han_char, new_parser, EncodeHex};
+use bitcoin::params::{MAINNET, TESTNET3, TESTNET4};
+use bitcoin::{Network, OutPoint, Script};
+use bitcoin_demo::{block_parser_range, extract_op_return, han_char, EncodeHex};
 use chrono::TimeZone;
 use rusqlite::{params, Connection};
+use std::path::Path;
 
-fn main() {
-    let mut db = Connection::open("./op-return-messages.db").unwrap();
+fn main() -> anyhow::Result<()> {
+    run("./op-return-messages-mainnet.db", MAINNET.network)?;
+    run("./op-return-messages-testnet3.db", TESTNET3.network)?;
+    run("./op-return-messages-testnet4.db", TESTNET4.network)?;
+    Ok(())
+}
+
+fn run(db_file: impl AsRef<Path>, network: Network) -> anyhow::Result<()> {
+    let mut db = Connection::open(db_file)?;
     db.execute(
         r#"create table if not exists op_return_msg
 (
@@ -21,14 +32,22 @@ fn main() {
     txo_vout        integer not null
 )"#,
         params![],
-    )
-    .unwrap();
-    let db_transaction = db.transaction().unwrap();
+    )?;
+    let height_start = db
+        .query_row(
+            "select max(block_height) from op_return_msg",
+            params![],
+            |r| r.get::<_, Option<u32>>(0),
+        )?
+        .unwrap_or(0);
+
+    let db_transaction = db.transaction()?;
     let mut stmt = db_transaction.prepare(r#"insert into op_return_msg (data, hex, text, block_timestamp, block_height, txo_txid, txo_vout)
-    values (?, ?, ?, ?, ?, ?, ?)"#).unwrap();
+    values (?, ?, ?, ?, ?, ?, ?)"#)?;
 
     // let parser = block_parser_recent(10 * 30 * 24 * 60 / 10 /* 10 months */);
-    let parser = new_parser(Network::Testnet(TestnetVersion::V4));
+    // let parser = new_parser(Network::Testnet(TestnetVersion::V4));
+    let parser = block_parser_range(height_start.., network);
     for (height, block) in parser {
         for tx in block.txdata {
             for (txo_idx, txo) in tx.output.iter().enumerate() {
@@ -75,29 +94,36 @@ fn main() {
                             "Block Time: {:?}, Height: {height}, txo: {}, data: {}",
                             block_time,
                             OutPoint {
-                                txid: txid_hex.parse().unwrap(),
+                                txid: txid_hex.parse()?,
                                 vout: txo_idx as u32,
                             },
                             text.replace("\n", " ")
                         );
-                        stmt.execute(params![
-                            data,
-                            data.hex(),
-                            text,
-                            block.header.time,
-                            height,
-                            txid_hex,
-                            txo_idx as u32,
-                        ])
-                        .unwrap();
+
+                        // check row existence
+                        let count = db_transaction.query_row("select count(*) from op_return_msg where txo_txid = ? and txo_vout = ?", params![
+                            txid_hex, txo_idx as u32
+                        ], |r| r.get::<_, u32>(0))?;
+                        if count == 0 {
+                            stmt.execute(params![
+                                data,
+                                data.hex(),
+                                text,
+                                block.header.time,
+                                height,
+                                txid_hex,
+                                txo_idx as u32,
+                            ])?;
+                        }
                     }
                 }
             }
         }
     }
     drop(stmt);
-    db_transaction.commit().unwrap();
+    db_transaction.commit()?;
     drop(db);
+    Ok(())
 }
 
 fn trim_null(bytes: &[u8]) -> &[u8] {
