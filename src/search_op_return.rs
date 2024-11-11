@@ -2,7 +2,7 @@
 //!
 //! Supports incremental database creation.
 //!
-//! Chinese messages: `output/op-return-chinese/<network>.txt`
+//! Chinese messages: `output/op-return-chinese/<network>.csv`
 
 use bitcoin::params::{MAINNET, TESTNET3, TESTNET4};
 use bitcoin::{Network, OutPoint, Script};
