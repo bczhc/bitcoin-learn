@@ -5,6 +5,7 @@
 #![feature(bigint_helper_methods)]
 // #![feature(type_alias_impl_trait)]
 
+use crate::signing_helper::{one_input_sign, sign_sighash};
 use bczhc_lib::char::han_char_range;
 use bitcoin::absolute::{encode, LockTime};
 use bitcoin::address::script_pubkey::BuilderExt;
@@ -12,10 +13,12 @@ use bitcoin::key::Secp256k1;
 use bitcoin::opcodes::all::{OP_PUSHBYTES_75, OP_PUSHDATA1};
 use bitcoin::script::{PushBytes, ScriptBufExt, ScriptExt};
 use bitcoin::secp256k1::{All, Message, SecretKey};
+use bitcoin::sighash::SighashCache;
 use bitcoin::transaction::Version;
 use bitcoin::{
-    consensus, Address, Amount, Network, OutPoint, PrivateKey, PublicKey, Script, ScriptBuf,
-    Sequence, TestnetVersion, Transaction, TxIn, Txid,
+    consensus, Address, AddressType, Amount, EcdsaSighashType, Network, OutPoint, PrivateKey,
+    PublicKey, Script, ScriptBuf, Sequence, TestnetVersion, Transaction, TxIn, TxOut, Txid,
+    Witness,
 };
 use bitcoin_block_parser::blocks::Options;
 use bitcoin_block_parser::headers::ParsedHeader;
@@ -351,6 +354,55 @@ pub fn broadcast_tx_retry(tx: &Transaction) -> Txid {
         }
     };
     new_txid
+}
+
+pub fn generic_pay_to_one(
+    network: Network,
+    wif: &str,
+    outpoint: &str,
+    outpoint_script_pubkey: &Script,
+    outpoint_amount: Amount,
+    outpoint_is_p2wpkh: bool,
+    to_address: &str,
+    amount: Amount,
+) -> anyhow::Result<Txid> {
+    let outpoint: OutPoint = outpoint.parse()?;
+    let address = parse_address(to_address, network)?;
+
+    let mut tx = default_tx();
+    tx.input[0].previous_output = outpoint;
+
+    tx.output = vec![TxOut {
+        value: amount,
+        script_pubkey: address.script_pubkey(),
+    }];
+
+    // use p2wpkh signing or legacy signing according to the address type
+    if outpoint_is_p2wpkh {
+        let sighash_type = EcdsaSighashType::All;
+        let mut cache = SighashCache::new(tx.clone());
+        let sighash = cache.p2wpkh_signature_hash(
+            0,
+            outpoint_script_pubkey,
+            outpoint_amount,
+            sighash_type,
+        )?;
+        let private_key = PrivateKey::from_wif(wif)?;
+        let signature = sign_sighash(sighash, &private_key.inner, sighash_type);
+        let mut witness = Witness::new();
+        witness.push(signature);
+        witness.push(
+            private_key
+                .public_key(&Default::default())
+                .inner
+                .serialize(),
+        );
+        tx.input[0].witness = witness;
+    } else {
+        one_input_sign(wif, &mut tx, outpoint_script_pubkey)?;
+    }
+
+    Ok(broadcast_tx(&tx)?)
 }
 
 #[macro_export]

@@ -216,6 +216,14 @@ path = "src/temp.rs"
 name = "bech32"
 path = "src/bech32.rs"
 
+[[bin]]
+name = "send_to_p2wsh"
+path = "src/segwit/send_to_p2wsh.rs"
+
+[[bin]]
+name = "spend-p2wsh"
+path = "src/segwit/spend_p2wsh.rs"
+
 [features]
 #default = ["rocksdb"]
 #rocksdb = ["dep:librocksdb-sys", "dep:rocksdb"]
