@@ -26,6 +26,7 @@ use bitcoin_block_parser::{BlockParser, DefaultParser, HeaderParser};
 pub use bitcoincore_rpc::bitcoin as bitcoin_old;
 use bitcoincore_rpc::bitcoin::opcodes::all::OP_PUSHBYTES_1;
 use bitcoincore_rpc::{Auth, RpcApi};
+use chrono::{DateTime, Local, TimeZone};
 use digest::generic_array::GenericArray;
 use digest::typenum::Unsigned;
 use digest::{Digest, FixedOutput, OutputSizeUser};
@@ -403,6 +404,28 @@ pub fn generic_pay_to_one(
     }
 
     Ok(broadcast_tx(&tx)?)
+}
+
+pub fn parse_timestamp(time: u32) -> DateTime<Local> {
+    Local.timestamp_millis_opt(time as i64 * 1000).unwrap()
+}
+
+#[inline]
+pub fn guess_meaningful_text(data: &[u8]) -> bool {
+    // only accept data that is valid UTF-8
+    let Ok(text) = std::str::from_utf8(data) else {
+        return false;
+    };
+    // only accept printable data
+    if text.chars().any(|x| x.is_ascii_control()) {
+        return false;
+    }
+    // reject text with all asciis but without any space
+    if text.chars().all(|x| x.is_ascii()) && !text.contains(' ') {
+        return false;
+    }
+
+    true
 }
 
 #[macro_export]

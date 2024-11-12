@@ -6,7 +6,9 @@
 
 use bitcoin::params::{MAINNET, TESTNET3, TESTNET4};
 use bitcoin::{Network, OutPoint, Script};
-use bitcoin_demo::{block_parser_range, extract_op_return, han_char, EncodeHex};
+use bitcoin_demo::{
+    block_parser_range, extract_op_return, guess_meaningful_text, han_char, EncodeHex,
+};
 use chrono::TimeZone;
 use clap::Parser;
 use rusqlite::{params, Connection};
@@ -65,34 +67,11 @@ fn run(db_file: impl AsRef<Path>, network: Network) -> anyhow::Result<()> {
                     else {
                         continue;
                     };
-                    // only accept data that is valid UTF-8
-                    let Ok(text) = std::str::from_utf8(data) else {
-                        continue;
-                    };
-                    // only accept printable data
-                    if text.chars().any(|x| x.is_ascii_control()) {
-                        continue;
-                    }
-                    // reject text with all asciis but without any space
-                    if text.chars().all(|x| x.is_ascii()) && !text.contains(' ') {
+                    if !guess_meaningful_text(data) {
                         continue;
                     }
                     let data = trim_null(data);
-                    // validate_han(s) && !s.is_empty()
-                    // !s.is_empty() && s.contains("bitcoin")
-                    //     || s.contains("Bitcoin")
-                    //     || s.contains("BITCOIN")
-                    //     || s.contains("？")
-                    // s.chars().any(han_char) && !s.as_bytes().starts_with(&hex!("146f6d6e69"))
-                    let predicate = text.chars().any(han_char) /* contains Han characters*/
-                        && data.len() >= 3 * 2 /* more than two Han characters */
-                        && !text.starts_with("omni") /* filter out some specific string patterns */;
-                    let predicate2 = text.contains("bitcoin")
-                        || text.contains("BITCOIN")
-                        || text.contains("Bitcoin");
-                    if
-                    /*predicate || predicate2*/
-                    true {
+                    if true {
                         // OP_RETURN has all Han characters
                         let block_time = chrono::Local
                             .timestamp_millis_opt(block.header.time as i64 * 1000)
