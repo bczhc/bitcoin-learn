@@ -4,8 +4,7 @@
 //!
 //! This sample will fail to broadcast.
 
-use bitcoin::script::{PushBytes, ScriptBufExt};
-use bitcoin::{consensus, Amount, Network, OutPoint, ScriptBuf, TestnetVersion, TxOut};
+use bitcoin::{consensus, Amount, Network, OutPoint, TestnetVersion, TxOut};
 use bitcoin_demo::signing_helper::one_input_sign;
 use bitcoin_demo::{
     confirm_to_broadcast, default_tx, ideal_checked_op_return, parse_address, script_hex,

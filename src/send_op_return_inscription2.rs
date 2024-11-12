@@ -39,6 +39,8 @@
 //!
 //! Ehh. However, the extra message is too long to be fitted in a single OP_RETURN data. So split
 //! them more using [`split_message`].
+//!
+//! https://mempool.space/testnet4/tx/6a2998062461aed0c273966b3869404418f5cd399d3ba56748a156c169a9381b
 
 use bitcoin::script::{PushBytes, ScriptBufExt};
 use bitcoin::{Amount, Network, OutPoint, ScriptBuf, TxOut};

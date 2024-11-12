@@ -272,6 +272,7 @@ dependencies = [
  "blake3",
  "byteorder",
  "chrono",
+ "clap",
  "crossbeam-channel",
  "csv",
  "db-key",

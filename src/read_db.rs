@@ -1,13 +1,36 @@
 use bczhc_lib::char::han_char_range;
 use chrono::TimeZone;
+use clap::Parser;
 use rusqlite::{params, Connection};
-use std::env::args;
-use std::io::stdout;
+use std::fs::File;
+use std::io::Write;
+use std::path::{Path, PathBuf};
 
-fn main() {
-    let args = args().skip(1).collect::<Vec<_>>();
-    let db_path = args.get(0).expect("Missing cli arg0");
+#[derive(Parser)]
+struct Args {
+    db_path: PathBuf,
+}
 
+fn main() -> anyhow::Result<()> {
+    let args = Args::parse();
+    let db_path = args.db_path;
+
+    run(
+        db_path.join("mainnet.db"),
+        File::create("output/op-return-chinese/mainnet.csv")?,
+    );
+    run(
+        db_path.join("testnet3.db"),
+        File::create("output/op-return-chinese/testnet3.csv")?,
+    );
+    run(
+        db_path.join("testnet4.db"),
+        File::create("output/op-return-chinese/testnet4.csv")?,
+    );
+    Ok(())
+}
+
+fn run(db_path: impl AsRef<Path>, writer: impl Write) {
     struct Row {
         height: u32,
         time: String,
@@ -36,7 +59,7 @@ fn main() {
         })
         .unwrap();
 
-    let mut csv = csv::Writer::from_writer(stdout());
+    let mut csv = csv::Writer::from_writer(writer);
     csv.write_record(&["Block Height", "Block Time", "Tx Output", "Text"])
         .unwrap();
 

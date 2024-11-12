@@ -8,14 +8,21 @@ use bitcoin::params::{MAINNET, TESTNET3, TESTNET4};
 use bitcoin::{Network, OutPoint, Script};
 use bitcoin_demo::{block_parser_range, extract_op_return, han_char, EncodeHex};
 use chrono::TimeZone;
+use clap::Parser;
 use rusqlite::{params, Connection};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+#[derive(Parser)]
+struct Args {
+    db_path: PathBuf,
+}
 
 fn main() -> anyhow::Result<()> {
-    let file = "/home/bczhc/Documents/bitcoin-op-return-msg/op-return-messages-";
-    run(format!("{file}mainnet.db"), MAINNET.network)?;
-    run(format!("{file}testnet3.db"), TESTNET3.network)?;
-    run(format!("{file}testnet4.db"), TESTNET4.network)?;
+    let args = Args::parse();
+
+    run(args.db_path.join("mainnet.db"), MAINNET.network)?;
+    run(args.db_path.join("testnet3.db"), TESTNET3.network)?;
+    run(args.db_path.join("testnet4.db"), TESTNET4.network)?;
     Ok(())
 }
 

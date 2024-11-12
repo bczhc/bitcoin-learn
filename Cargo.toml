@@ -59,6 +59,7 @@ bitcoin-varint = "0.1.0"
 bitflags = "2.6.0"
 csv = "1.3.0"
 bech32 = "0.11.0"
+clap = { version = "4.5.20", features = ["derive"] }
 
 # TODO: my local workaround for the unreleased versions
 [patch.crates-io]
@@ -227,6 +228,14 @@ path = "src/segwit/spend_p2wsh.rs"
 [[bin]]
 name = "p2wsh-inscription"
 path = "src/segwit/p2wsh_inscription.rs"
+
+[[bin]]
+name = "fetch-witness"
+path = "src/fetch_witness.rs"
+
+[[bin]]
+name = "search-witness"
+path = "src/search_witness.rs"
 
 [features]
 #default = ["rocksdb"]
