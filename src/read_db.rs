@@ -1,9 +1,13 @@
 use bczhc_lib::char::han_char_range;
 use chrono::TimeZone;
 use rusqlite::{params, Connection};
+use std::env::args;
 use std::io::stdout;
 
 fn main() {
+    let args = args().skip(1).collect::<Vec<_>>();
+    let db_path = args.get(0).expect("Missing cli arg0");
+
     struct Row {
         height: u32,
         time: String,
@@ -12,10 +16,7 @@ fn main() {
         vout: u32,
     }
 
-    let db = Connection::open(
-        "/home/bczhc/Documents/bitcoin-op-return-msg/op-return-messages-mainnet.db",
-    )
-    .unwrap();
+    let db = Connection::open(db_path).unwrap();
     let mut stmt = db
         .prepare("select * from op_return_msg order by block_timestamp")
         .unwrap();

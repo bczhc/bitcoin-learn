@@ -12,9 +12,10 @@ use rusqlite::{params, Connection};
 use std::path::Path;
 
 fn main() -> anyhow::Result<()> {
-    run("./op-return-messages-mainnet.db", MAINNET.network)?;
-    run("./op-return-messages-testnet3.db", TESTNET3.network)?;
-    run("./op-return-messages-testnet4.db", TESTNET4.network)?;
+    let file = "/home/bczhc/Documents/bitcoin-op-return-msg/op-return-messages-";
+    run(format!("{file}mainnet.db"), MAINNET.network)?;
+    run(format!("{file}testnet3.db"), TESTNET3.network)?;
+    run(format!("{file}testnet4.db"), TESTNET4.network)?;
     Ok(())
 }
 
