@@ -4,7 +4,7 @@
 
 use bitcoin::address::script_pubkey::ScriptBufExt;
 use bitcoin::{Network, PublicKey, ScriptBuf};
-use bitcoin_demo::{new_parser, EncodeHex};
+use bitcoin_demo::new_parser;
 use hex_literal::hex;
 
 fn main() -> anyhow::Result<()> {

@@ -1,9 +1,7 @@
-use bitcoin::{consensus, Block, CompactTarget};
-use bitcoin_demo::{bitcoin_new_to_old, bitcoin_old, bitcoin_rpc_testnet4, EncodeHex};
+use bitcoin::{consensus, Block};
+use bitcoin_demo::{bitcoin_new_to_old, bitcoin_rpc_testnet4};
 use bitcoincore_rpc::RpcApi;
 use hex_literal::hex;
-use std::thread::sleep;
-use std::time::Duration;
 
 fn main() {
     let rpc = bitcoin_rpc_testnet4().unwrap();

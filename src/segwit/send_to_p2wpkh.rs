@@ -3,9 +3,7 @@ mod spend_p2wpkh;
 use bitcoin::script::ScriptExt;
 use bitcoin::{Amount, OutPoint, TxOut};
 use bitcoin_demo::signing_helper::one_input_sign;
-use bitcoin_demo::{
-    broadcast_tx, confirm_to_broadcast, default_tx, parse_address, script_hex, TESTNET4,
-};
+use bitcoin_demo::{confirm_to_broadcast, default_tx, parse_address, script_hex, TESTNET4};
 
 const FEE: Amount = Amount::from_sat(300);
 

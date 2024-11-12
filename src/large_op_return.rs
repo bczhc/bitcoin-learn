@@ -29,7 +29,7 @@ fn main() -> anyhow::Result<()> {
     // https://github.com/sumopool/bitcoin-block-parser/issues/5
     // let writer = writer.lock();
     let mut csv = csv::Writer::from_writer(File::create("../output/output.csv").unwrap());
-    csv.write_record(&["Block Time", "Block Height", "Tx", "Data", "Lossy Text"])?;
+    csv.write_record(["Block Time", "Block Height", "Tx", "Data", "Lossy Text"])?;
 
     let parser = block_parser_range(.., MAINNET.network);
     for (h, block) in parser {
@@ -37,7 +37,7 @@ fn main() -> anyhow::Result<()> {
             for txo in &tx.output {
                 let script = Script::from_bytes(txo.script_pubkey.as_bytes());
                 if script.is_op_return() {
-                    let Some(data) = extract_op_return(&script) else {
+                    let Some(data) = extract_op_return(script) else {
                         continue;
                     };
 

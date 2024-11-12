@@ -7,7 +7,6 @@ use bitcoin::Network;
 use bitcoin_demo::new_parser;
 use bitcoincore_rpc::bitcoin::opcodes::all::{OP_PUSHBYTES_33, OP_PUSHBYTES_72};
 use rayon::prelude::*;
-use std::fmt::Debug;
 
 fn main() -> anyhow::Result<()> {
     const SIG_LEN: usize = 72;

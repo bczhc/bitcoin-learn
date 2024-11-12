@@ -12,20 +12,16 @@ use bitcoin_block_parser::blocks::Options;
 use bitcoin_block_parser::utxos::{FilterParser, UtxoParser};
 use bitcoin_block_parser::BlockParser;
 use bitcoin_demo::{
-    bitcoin_block_reward, bitcoin_old, bitcoin_rpc, new_parser, parse_headers, set_up_logging,
-    IntervalLogger,
+    bitcoin_block_reward, bitcoin_old, parse_headers, set_up_logging, IntervalLogger,
 };
-use bitcoincore_rpc::RpcApi;
 use log::{debug, info, LevelFilter};
 use rayon::prelude::*;
 use std::fs::File;
-use std::sync::mpsc::sync_channel;
-use zmq::Sendable;
 
 fn main() -> anyhow::Result<()> {
     set_up_logging(LevelFilter::Info, None)?;
     let mut csv = csv::Writer::from_writer(File::create("../output/output.txt")?);
-    csv.write_record(&[
+    csv.write_record([
         "Block Height",
         "Block ID",
         "Tx Fee",

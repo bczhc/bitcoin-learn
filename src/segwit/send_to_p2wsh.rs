@@ -22,13 +22,13 @@ fn main() -> anyhow::Result<()> {
 
 fn redeem_script() -> ScriptBuf {
     // the full unlocking script: 1 1 <ADD 2 EQUAL>
-    let redeem = ScriptBuf::builder()
+
+    ScriptBuf::builder()
         .push_opcode(OP_ADD)
         .push_int(2)
         .unwrap()
         .push_opcode(OP_EQUAL)
-        .into_script();
-    redeem
+        .into_script()
 }
 
 #[cfg(test)]

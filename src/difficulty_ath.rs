@@ -7,7 +7,7 @@ use std::cmp::Ordering;
 
 fn main() {
     let blk_dir = "/mnt/nvme/bitcoin/bitcoind/blocks/blocks";
-    let mut headers = HeaderParser::parse(blk_dir).unwrap();
+    let headers = HeaderParser::parse(blk_dir).unwrap();
 
     let max = headers.iter().max_by(|a, b| {
         a.inner

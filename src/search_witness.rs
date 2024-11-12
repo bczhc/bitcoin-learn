@@ -48,12 +48,10 @@ fn main() -> anyhow::Result<()> {
                     continue;
                 };
 
-                if last.len() > 2 {
-                    if &last[(last.len() - 1 - 1)..] == &hex!("7551") {
-                        let script = Script::from_bytes(last);
-                        if script.to_asm_string().ends_with("OP_DROP OP_PUSHNUM_1") {
-                            println!("{} {}", tx.compute_txid(), String::from_utf8_lossy(last));
-                        }
+                if last.len() > 2 && &last[(last.len() - 1 - 1)..] == &hex!("7551") {
+                    let script = Script::from_bytes(last);
+                    if script.to_asm_string().ends_with("OP_DROP OP_PUSHNUM_1") {
+                        println!("{} {}", tx.compute_txid(), String::from_utf8_lossy(last));
                     }
                 }
             }

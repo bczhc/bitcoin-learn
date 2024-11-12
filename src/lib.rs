@@ -35,7 +35,7 @@ use sha2::Sha256;
 use std::collections::Bound;
 use std::env::args;
 use std::io::{stdin, stdout, Read, Write};
-use std::ops::{Index, RangeBounds};
+use std::ops::RangeBounds;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn random_secret_key() -> SecretKey {
@@ -183,12 +183,12 @@ pub fn new_parser(
 ) -> impl IntoIterator<Item = (usize, bitcoincore_rpc::bitcoin::Block)> {
     let options = Options::default().order_output();
     let blk_dir = blocks_dir(network);
-    let mut headers = HeaderParser::parse(blk_dir).unwrap();
+    let headers = HeaderParser::parse(blk_dir).unwrap();
     println!("{}", headers.len());
     // headers.reverse();
     let parser = DefaultParser.parse_with_opts(&headers, options);
 
-    let mut height = headers.len() - 1;
+    let height = headers.len() - 1;
     (0..=height)
         // .rev()
         .zip(parser.into_iter().map(Result::unwrap))
@@ -203,7 +203,7 @@ pub fn new_parser_rev(
     headers.reverse();
     let parser = DefaultParser.parse_with_opts(&headers, options);
 
-    let mut height = headers.len() - 1;
+    let height = headers.len() - 1;
     (0..=height)
         .rev()
         .zip(parser.into_iter().map(Result::unwrap))
@@ -219,7 +219,7 @@ pub fn block_parser(
     let options = Options::default().order_output();
     let parser = DefaultParser.parse_with_opts(headers, options);
 
-    let mut height = headers.len() - 1;
+    let height = headers.len() - 1;
     (0..=height).zip(parser.into_iter().map(Result::unwrap))
 }
 
@@ -268,7 +268,7 @@ pub fn block_parser_range(range: impl RangeBounds<u32>, network: Network) -> blo
         .parse_with_opts(range, options)
         .into_iter()
         .map(Result::unwrap);
-    (start..=end).into_iter().zip(parser)
+    (start..=end).zip(parser)
 }
 
 pub trait ScriptsBuilderExt
@@ -317,7 +317,7 @@ pub fn confirm_to_broadcast(tx: &Transaction) {
 
 const FEE_RATE: f64 = 1.4;
 pub fn estimate_fee(tx: &Transaction) -> Amount {
-    let size = consensus::serialize(tx).len() + ESTIMATED_SCRIPT_SIG_SIZE * 1;
+    let size = consensus::serialize(tx).len() + ESTIMATED_SCRIPT_SIG_SIZE;
     Amount::from_sat((size as f64 * FEE_RATE) as u64)
 }
 
@@ -343,8 +343,8 @@ pub fn ideal_checked_op_return(data: &[u8]) -> ScriptBuf {
 }
 
 pub fn broadcast_tx_retry(tx: &Transaction) -> Txid {
-    let new_txid = loop {
-        let result = broadcast_tx(&tx);
+    loop {
+        let result = broadcast_tx(tx);
         match result {
             Ok(x) => break x,
             Err(e) => {
@@ -352,8 +352,7 @@ pub fn broadcast_tx_retry(tx: &Transaction) -> Txid {
                 prompt_wait_new_line();
             }
         }
-    };
-    new_txid
+    }
 }
 
 pub fn generic_pay_to_one(
@@ -402,7 +401,7 @@ pub fn generic_pay_to_one(
         one_input_sign(wif, &mut tx, outpoint_script_pubkey)?;
     }
 
-    Ok(broadcast_tx(&tx)?)
+    broadcast_tx(&tx)
 }
 
 pub fn parse_timestamp(time: u32) -> DateTime<Local> {
@@ -421,7 +420,7 @@ pub fn guess_meaningful_text(text: &str) -> bool {
         return false;
     }
     // reject text with all asciis but without any space
-    if text.chars().all(|x| x.is_ascii()) && !text.contains(' ') {
+    if text.is_ascii() && !text.contains(' ') {
         return false;
     }
 
@@ -467,9 +466,7 @@ pub fn extract_op_return(script: &Script) -> Option<&[u8]> {
     }
 
     // OP_RETURN <OP_PUSHBYTES_1..=OP_PUSHBYTES_75> <data>
-    if bytes.get(1).is_none() {
-        return None;
-    }
+    bytes.get(1)?;
     if (OP_PUSHBYTES_1.to_u8()..=OP_PUSHBYTES_75.to_u8()).contains(&bytes[1]) {
         let pushed_len = (bytes[1] - OP_PUSHBYTES_1.to_u8() + 1) as usize;
         if bytes.len() - 2 < pushed_len {
@@ -714,8 +711,8 @@ const INITIAL_BLOCK_REWARD: u64 = 50_0000_0000 /* 50 BTC */;
 pub fn bitcoin_block_reward(height: u32) -> u64 {
     const INTERVAL: u32 = 210_000;
     match height {
-        const { INTERVAL * 0 }..const { INTERVAL * 1 } => INITIAL_BLOCK_REWARD / 1,
-        const { INTERVAL * 1 }..const { INTERVAL * 2 } => INITIAL_BLOCK_REWARD / 2,
+        const { INTERVAL * 0 }..const { INTERVAL } => INITIAL_BLOCK_REWARD,
+        const { INTERVAL }..const { INTERVAL * 2 } => INITIAL_BLOCK_REWARD / 2,
         const { INTERVAL * 2 }..const { INTERVAL * 3 } => INITIAL_BLOCK_REWARD / 4,
         const { INTERVAL * 3 }..const { INTERVAL * 4 } => INITIAL_BLOCK_REWARD / 8,
         const { INTERVAL * 4 }..const { INTERVAL * 5 } => INITIAL_BLOCK_REWARD / 16,
@@ -746,6 +743,12 @@ pub fn set_up_logging(level: log::LevelFilter, file: Option<&str>) -> anyhow::Re
 
 pub struct IntervalLogger {
     start: u64,
+}
+
+impl Default for IntervalLogger {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl IntervalLogger {

@@ -1,4 +1,3 @@
-use bitcoin::absolute::LockTime;
 use bitcoin::opcodes::all::{OP_CLTV, OP_DROP};
 use bitcoin::opcodes::OP_TRUE;
 use bitcoin::script::ScriptBufExt;
@@ -7,10 +6,7 @@ use bitcoin::{
     absolute, Address, Amount, Network, OutPoint, ScriptBuf, Sequence, TestnetVersion, Transaction,
     TxIn, TxOut, Witness,
 };
-use bitcoin_demo::{
-    bitcoin_rpc_testnet4, confirm_to_broadcast, BitcoinAmountExt, ScriptsBuilderExt,
-};
-use bitcoincore_rpc::RpcApi;
+use bitcoin_demo::{confirm_to_broadcast, BitcoinAmountExt, ScriptsBuilderExt};
 
 fn main() -> anyhow::Result<()> {
     let timestamp = "2024-10-21T17:00:00+08:00"

@@ -47,7 +47,7 @@ fn main() {
     let witness_program = hex!("751e76e8199196d454941c45d1b3a323f1433bd6");
     let script_pubkey = ScriptBuf::builder()
         .push_opcode(OP_0 /* witness version */)
-        .push_slice(&witness_program)
+        .push_slice(witness_program)
         .into_script();
     println!("{}", script_pubkey);
 

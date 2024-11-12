@@ -11,7 +11,7 @@ use std::fs::File;
 use std::io::Write;
 
 fn main() -> anyhow::Result<()> {
-    let parser = block_parser_recent(Network::Bitcoin, 1 * 30 * 24 * 60 / 10 /* 1 month */);
+    let parser = block_parser_recent(Network::Bitcoin, 30 * 24 * 60 / 10 /* 1 month */);
     let address = "bc1q3ez0mu6q3y59emtl2nweeevnhu7ualvu3ylapp";
     let address_spk = address
         .parse::<bitcoin::Address<_>>()?
@@ -33,7 +33,7 @@ fn main() -> anyhow::Result<()> {
 
     let mut tx_vec = Vec::new();
 
-    let parser = block_parser_recent(Network::Bitcoin, 1 * 30 * 24 * 60 / 10 /* 1 month */);
+    let parser = block_parser_recent(Network::Bitcoin, 30 * 24 * 60 / 10 /* 1 month */);
     for (_h, block) in parser {
         for tx in block.txdata.into_iter().filter(|x| {
             x.input.len() == 1

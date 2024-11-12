@@ -2,7 +2,6 @@
 
 use bitcoin::hex::DisplayHex;
 use bitcoin::secp256k1;
-use bitcoin_demo::EncodeHex;
 use num_bigint::BigUint;
 
 fn main() {
@@ -34,7 +33,7 @@ fn main() {
     // 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140
     println!("{}", padded_bytes_from_bigint_be::<32>(&valid).as_hex());
 
-    assert!(!secret_from_num(&invalid).is_ok());
+    assert!(secret_from_num(&invalid).is_err());
     assert!(secret_from_num(&valid).is_ok());
 }
 

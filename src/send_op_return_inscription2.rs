@@ -63,7 +63,7 @@ fn main() -> anyhow::Result<()> {
         OP_RETURN_IDEAL_MAX,
     )
     .into_iter()
-    .map(|x| Vec::from(x));
+    .map(Vec::from);
     let chunks = data.chunks(OUTPUT_OP_RETURN_LIMIT).map(|x| x.to_vec());
 
     let wif = "cVCag3xvtzb5KqYehrKwSWtfQbvX7cLifTfqGLDAwZkucMvRSE13";
@@ -118,7 +118,7 @@ fn prefix_list(data: &[u8]) -> Vec<String> {
             let test_prefix = &hex[..len];
             let prefix_match_count = hex_list
                 .iter()
-                .filter(|x| x.starts_with(&test_prefix))
+                .filter(|x| x.starts_with(test_prefix))
                 .count();
             if prefix_match_count == 1 {
                 prefix_list.push(test_prefix.into());

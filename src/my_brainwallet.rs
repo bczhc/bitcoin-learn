@@ -1,7 +1,7 @@
 use std::env::args;
 
 use bitcoin::key::Secp256k1;
-use bitcoin::{Address, Network, PrivateKey};
+use bitcoin::{Network, PrivateKey};
 use num_bigint::BigUint;
 
 use bitcoin_demo::hash_iter;
@@ -17,7 +17,7 @@ fn main() {
 }
 
 fn ec_add_1(ec: &[u8]) -> [u8; 32] {
-    let uint = BigUint::from_bytes_be(&ec);
+    let uint = BigUint::from_bytes_be(ec);
     let vec = (uint + BigUint::from(1_u8)).to_bytes_be();
     vec.try_into().unwrap()
 }

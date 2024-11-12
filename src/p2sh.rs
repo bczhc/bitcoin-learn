@@ -1,7 +1,6 @@
-use bitcoin::opcodes::all::{OP_ADD, OP_EQUAL};
 use bitcoin::script::ScriptBufExt;
-use bitcoin::{Opcode, Script, ScriptBuf};
-use bitcoin_demo::{hash160, EncodeHex};
+use bitcoin::{Script, ScriptBuf};
+use bitcoin_demo::hash160;
 use num_bigint::BigUint;
 use num_traits::{One, Zero};
 

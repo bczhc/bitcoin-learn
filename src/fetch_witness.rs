@@ -3,7 +3,7 @@
 //! <https://mempool.space/testnet4/tx/bbb38216aad6346f8deac68a7fcfc58c26e6069d32b10cf3d2207f6d82f76203?mode=details>
 
 use bitcoin::Txid;
-use bitcoin_demo::{bitcoin_new_to_old, bitcoin_rpc_testnet4, hash160};
+use bitcoin_demo::{bitcoin_new_to_old, bitcoin_rpc_testnet4};
 use bitcoincore_rpc::RpcApi;
 use std::fs::File;
 use std::io::Write;

@@ -1,4 +1,4 @@
-use bitcoin::absolute::{Height, LockTime};
+use bitcoin::absolute::LockTime;
 use bitcoin::address::script_pubkey::{BuilderExt, ScriptExt};
 use bitcoin::address::ParseError;
 use bitcoin::hashes::Hash;

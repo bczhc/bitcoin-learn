@@ -10,7 +10,7 @@ const MAGIC: [u8; 4] = hex!("f9 be b4 d9");
 
 fn main() {
     let blk_dir = "/mnt/nvme/bitcoin/bitcoind/blocks/testnet3/blocks";
-    let mut file = File::open(Path::new(blk_dir).join("blk00000.dat")).unwrap();
+    let file = File::open(Path::new(blk_dir).join("blk00000.dat")).unwrap();
 
     // let mut block_header = [0_u8; Header::SIZE];
     // file.read_exact(&mut block_header).unwrap();

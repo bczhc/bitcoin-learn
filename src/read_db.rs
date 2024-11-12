@@ -60,7 +60,7 @@ fn run(db_path: impl AsRef<Path>, writer: impl Write) {
         .unwrap();
 
     let mut csv = csv::Writer::from_writer(writer);
-    csv.write_record(&["Block Height", "Block Time", "Tx Output", "Text"])
+    csv.write_record(["Block Height", "Block Time", "Tx Output", "Text"])
         .unwrap();
 
     for x in rows {
@@ -79,5 +79,5 @@ fn run(db_path: impl AsRef<Path>, writer: impl Write) {
 }
 
 fn japanese_syllabary(c: char) -> bool {
-    matches!(c as u32, 0x3040..=0x309f | 0x30A0..=0x30ff)
+    matches!(c as u32, 0x3040..=0x30ff)
 }

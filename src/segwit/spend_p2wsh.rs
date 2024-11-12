@@ -23,8 +23,8 @@ fn main() -> anyhow::Result<()> {
 
     let mut witness = Witness::new();
     // witness.push(ScriptBuf::builder().push_int(1)?.push_int(1)?.as_bytes());
-    witness.push(&[0x01]);
-    witness.push(&[0x01]);
+    witness.push([0x01]);
+    witness.push([0x01]);
     let redeem_bytes = hex!("935287") /* ADD 2 EQUAL */;
     witness.push(redeem_bytes);
 

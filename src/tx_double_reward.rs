@@ -3,15 +3,12 @@
 #![feature(yeet_expr)]
 
 use crate::reward::LocalStorage;
-use bitcoin::{Amount, Network, OutPoint, ScriptBuf, TestnetVersion};
+use bitcoin::{Amount, Network, TestnetVersion};
 use bitcoin_demo::set_up_logging;
 use bitcoin_hashes::Hash;
 use bitcoincore_rpc::{Auth, Client, RpcApi};
-use log::{debug, info, LevelFilter};
+use log::{info, LevelFilter};
 use once_cell::sync::Lazy;
-use std::io;
-use std::ops::AddAssign;
-use std::path::Path;
 use zmq::{Socket, SocketType};
 
 const REWARD_SOURCE_WIF: &str = "cSrmvREBQvmGLwv9XvHSY6trK8Dm8Tv9aEKAWCaRQcvQuC3uMUVP";
@@ -90,7 +87,7 @@ fn bitcoin_rpc() -> bitcoincore_rpc::Result<Client> {
 }
 
 mod reward {
-    use crate::{reward, FEE, NETWORK, RETURN_RATE, REWARD_SOURCE_WIF, RPC, TO_REWARD_ADDRESS};
+    use crate::{FEE, NETWORK, RETURN_RATE, REWARD_SOURCE_WIF, RPC, TO_REWARD_ADDRESS};
     use anyhow::anyhow;
     use bitcoin::absolute::LockTime;
     use bitcoin::address::script_pubkey::BuilderExt;
@@ -100,18 +97,18 @@ mod reward {
     use bitcoin::transaction::Version;
     use bitcoin::{
         consensus, Address, Amount, EcdsaSighashType, OutPoint, PublicKey, Script, ScriptBuf,
-        Sequence, Transaction, TxIn, TxOut, Txid,
+        Sequence, Transaction, TxIn, TxOut,
     };
-    use bitcoin_demo::{bitcoin_old_to_new, EncodeHex};
+    use bitcoin_demo::bitcoin_old_to_new;
     use bitcoin_hashes::Hash;
     use bitcoincore_rpc::RpcApi;
     use log::{debug, info};
     use once_cell::sync::Lazy;
     use serde::{Deserialize, Serialize};
     use std::fs::File;
-    use std::io::{BufRead, BufReader, Write};
-    use std::path::{Path, PathBuf};
-    use std::str::FromStr;
+
+    use std::path::PathBuf;
+
     use yeet_ops::yeet;
 
     static SOURCE_ADDRESS_SCRIPT_PUBKEY: Lazy<ScriptBuf> = Lazy::new(|| {
@@ -174,7 +171,7 @@ mod reward {
             )?;
             let message = Message::from_digest(hash.to_byte_array());
             let ecdsa_signature = Secp256k1::default()
-                .sign_ecdsa(&message, &*SOURCE_ECDSA_SECRET)
+                .sign_ecdsa(&message, &SOURCE_ECDSA_SECRET)
                 .serialize_der();
             let mut bitcoin_signature = ecdsa_signature.to_vec();
             bitcoin_signature.push(sig_hash_type as u8);

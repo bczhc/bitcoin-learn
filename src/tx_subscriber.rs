@@ -1,6 +1,6 @@
 use bitcoin::consensus::deserialize;
 use bitcoin::script::ScriptExt;
-use bitcoin::{Script, Transaction};
+use bitcoin::Transaction;
 use zmq::SocketType;
 
 fn main() -> anyhow::Result<()> {
