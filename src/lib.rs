@@ -10,15 +10,14 @@ use bczhc_lib::char::han_char_range;
 use bitcoin::absolute::{encode, LockTime};
 use bitcoin::address::script_pubkey::BuilderExt;
 use bitcoin::key::Secp256k1;
-use bitcoin::opcodes::all::{OP_PUSHBYTES_75, OP_PUSHDATA1};
+use bitcoin::opcodes::all::{OP_PUSHBYTES_75, OP_PUSHDATA1, OP_PUSHDATA2};
 use bitcoin::script::{PushBytes, ScriptBufExt, ScriptExt};
 use bitcoin::secp256k1::{All, Message, SecretKey};
 use bitcoin::sighash::SighashCache;
 use bitcoin::transaction::Version;
 use bitcoin::{
-    consensus, Address, AddressType, Amount, EcdsaSighashType, Network, OutPoint, PrivateKey,
-    PublicKey, Script, ScriptBuf, Sequence, TestnetVersion, Transaction, TxIn, TxOut, Txid,
-    Witness,
+    consensus, Address, Amount, EcdsaSighashType, Network, OutPoint, PrivateKey, PublicKey, Script,
+    ScriptBuf, Sequence, TestnetVersion, Transaction, TxIn, TxOut, Txid, Witness,
 };
 use bitcoin_block_parser::blocks::Options;
 use bitcoin_block_parser::headers::ParsedHeader;
@@ -411,11 +410,12 @@ pub fn parse_timestamp(time: u32) -> DateTime<Local> {
 }
 
 #[inline]
-pub fn guess_meaningful_text(data: &[u8]) -> bool {
-    // only accept data that is valid UTF-8
-    let Ok(text) = std::str::from_utf8(data) else {
-        return false;
-    };
+pub fn guess_meaningful_text(text: &str) -> bool {
+    if text.len() < 10 && text.len() > 4 && text.chars().all(|x| !x.is_ascii_control()) {
+        // maybe single words
+        return true;
+    }
+
     // only accept printable data
     if text.chars().any(|x| x.is_ascii_control()) {
         return false;
@@ -479,16 +479,31 @@ pub fn extract_op_return(script: &Script) -> Option<&[u8]> {
         return Some(data);
     }
 
-    // OP_RETURN <OP_PUSHDATA1> <length> <data>
-    if bytes.get(1).is_none() || bytes.get(2).is_none() {
-        return None;
-    }
-    if bytes[1] == OP_PUSHDATA1.to_u8() {
-        let len = bytes[2] as usize;
-        if bytes.len() - 3 < len {
-            return None;
+    // OP_RETURN <OP_PUSHDATAx> <length> <data>
+    match bytes.get(1) {
+        Some(&x) if x == OP_PUSHDATA1.to_u8() => {
+            // OP_PUSHDATA1
+            let Some(&length) = bytes.get(2) else {
+                return None;
+            };
+            let length = length as usize;
+            if bytes.len() - 3 < length {
+                return None;
+            }
+            return Some(&bytes[3..(3 + length)]);
         }
-        return Some(&bytes[3..(3 + len)]);
+        Some(&x) if x == OP_PUSHDATA2.to_u8() => {
+            // OP_PUSHDATA2
+            let (Some(&len_low), Some(&len_high)) = (bytes.get(2), bytes.get(3)) else {
+                return None;
+            };
+            let length = u16::from_le_bytes([len_low, len_high]) as usize;
+            if bytes.len() - 4 < length {
+                return None;
+            }
+            return Some(&bytes[4..(4 + length)]);
+        }
+        _ => {}
     }
 
     None
@@ -1056,7 +1071,8 @@ pub mod mining {
 
 #[cfg(test)]
 mod test {
-    use crate::{decode_bitcoin_core_var_int, XorReader};
+    use crate::{decode_bitcoin_core_var_int, extract_op_return, guess_meaningful_text, XorReader};
+    use bitcoin::opcodes::all::{OP_PUSHDATA1, OP_PUSHDATA2};
     use hex_literal::hex;
     use std::io::{Cursor, Read};
 
@@ -1084,6 +1100,48 @@ mod test {
                 0xdf ^ 0xbb,
                 0x39 ^ 0xaa,
             ]
+        );
+    }
+
+    #[test]
+    fn meaningful_text() {
+        assert!(!guess_meaningful_text("\x02DS"));
+    }
+
+    #[test]
+    fn op_return() {
+        assert_eq!(extract_op_return(script_hex!("")), None);
+        assert_eq!(extract_op_return(script_hex!("6a")), None);
+        // OP_PUSHBYTES*
+        assert_eq!(extract_op_return(script_hex!("6a05")), None);
+        assert_eq!(
+            extract_op_return(script_hex!("6a056162636465")),
+            Some(&b"abcde"[..])
+        );
+        // OP_PUSHDATA1
+        assert_eq!(extract_op_return(script_hex!("6a4c")), None);
+        assert_eq!(extract_op_return(script_hex!("6a4c03")), None);
+        assert_eq!(extract_op_return(script_hex!("6a4c036162")), None);
+        assert_eq!(
+            extract_op_return(script_hex!("6a4c03616263")),
+            Some(&b"abc"[..])
+        );
+        assert_eq!(
+            extract_op_return(script_hex!("6a4c0361626364")),
+            Some(&b"abc"[..])
+        );
+        // OP_PUSHDATA2
+        assert_eq!(extract_op_return(script_hex!("6a4d")), None);
+        assert_eq!(extract_op_return(script_hex!("6a4d04")), None);
+        assert_eq!(extract_op_return(script_hex!("6a4d0400")), None);
+        assert_eq!(extract_op_return(script_hex!("6a4d0400616263")), None);
+        assert_eq!(
+            extract_op_return(script_hex!("6a4d040061626364")),
+            Some(&b"abcd"[..])
+        );
+        assert_eq!(
+            extract_op_return(script_hex!("6a4d04006162636465")),
+            Some(&b"abcd"[..])
         );
     }
 }

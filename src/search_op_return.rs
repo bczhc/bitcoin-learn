@@ -1,3 +1,4 @@
+#![feature(decl_macro)]
 //! Bitcoin OP_RETURN messages: write to SQLite database.
 //!
 //! Supports incremental database creation.
@@ -5,7 +6,7 @@
 //! Chinese messages: `output/op-return-chinese/<network>.csv`
 
 use bitcoin::params::{MAINNET, TESTNET3, TESTNET4};
-use bitcoin::{Network, OutPoint, Script};
+use bitcoin::{Network, OutPoint, Script, TestnetVersion};
 use bitcoin_demo::{
     block_parser_range, extract_op_return, guess_meaningful_text, han_char, EncodeHex,
 };
@@ -17,14 +18,30 @@ use std::path::{Path, PathBuf};
 #[derive(Parser)]
 struct Args {
     db_path: PathBuf,
+    network: String,
 }
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    run(args.db_path.join("mainnet.db"), MAINNET.network)?;
-    run(args.db_path.join("testnet3.db"), TESTNET3.network)?;
-    run(args.db_path.join("testnet4.db"), TESTNET4.network)?;
+    let mut network = args.network;
+    if network.to_lowercase() == "mainnet" {
+        network = "bitcoin".into();
+    }
+    let network: Network = network.parse()?;
+
+    match network {
+        Network::Bitcoin => {
+            run(args.db_path.join("mainnet.db"), MAINNET.network)?;
+        }
+        Network::Testnet(TestnetVersion::V3) => {
+            run(args.db_path.join("testnet3.db"), TESTNET3.network)?;
+        }
+        Network::Testnet(TestnetVersion::V4) => {
+            run(args.db_path.join("testnet4.db"), TESTNET4.network)?;
+        }
+        _ => unimplemented!(),
+    }
     Ok(())
 }
 
@@ -51,12 +68,18 @@ fn run(db_file: impl AsRef<Path>, network: Network) -> anyhow::Result<()> {
         )?
         .unwrap_or(0);
 
+    db.execute(
+        "DELETE FROM op_return_msg where block_height >= ?",
+        params![height_start],
+    )?;
+
     let db_transaction = db.transaction()?;
     let mut stmt = db_transaction.prepare(r#"insert into op_return_msg (data, hex, text, block_timestamp, block_height, txo_txid, txo_vout)
     values (?, ?, ?, ?, ?, ?, ?)"#)?;
 
     // let parser = block_parser_recent(10 * 30 * 24 * 60 / 10 /* 10 months */);
     // let parser = new_parser(Network::Testnet(TestnetVersion::V4));
+    // let parser = block_parser_range(height_start.., network);
     let parser = block_parser_range(height_start.., network);
     for (height, block) in parser {
         for tx in block.txdata {
@@ -67,7 +90,11 @@ fn run(db_file: impl AsRef<Path>, network: Network) -> anyhow::Result<()> {
                     else {
                         continue;
                     };
-                    if !guess_meaningful_text(data) {
+                    // only accept data that is valid UTF-8
+                    let Ok(text) = std::str::from_utf8(data) else {
+                        continue;
+                    };
+                    if !guess_meaningful_text(text) {
                         continue;
                     }
                     let data = trim_null(data);
@@ -77,6 +104,17 @@ fn run(db_file: impl AsRef<Path>, network: Network) -> anyhow::Result<()> {
                             .timestamp_millis_opt(block.header.time as i64 * 1000)
                             .unwrap();
                         let txid_hex = tx.compute_txid().to_string();
+
+                        stmt.execute(params![
+                            data,
+                            data.hex(),
+                            text,
+                            block.header.time,
+                            height,
+                            txid_hex,
+                            txo_idx as u32,
+                        ])?;
+
                         println!(
                             "Block Time: {:?}, Height: {height}, txo: {}, data: {}",
                             block_time,
@@ -86,22 +124,6 @@ fn run(db_file: impl AsRef<Path>, network: Network) -> anyhow::Result<()> {
                             },
                             text.replace("\n", " ")
                         );
-
-                        // check row existence
-                        let count = db_transaction.query_row("select count(*) from op_return_msg where txo_txid = ? and txo_vout = ?", params![
-                            txid_hex, txo_idx as u32
-                        ], |r| r.get::<_, u32>(0))?;
-                        if count == 0 {
-                            stmt.execute(params![
-                                data,
-                                data.hex(),
-                                text,
-                                block.header.time,
-                                height,
-                                txid_hex,
-                                txo_idx as u32,
-                            ])?;
-                        }
                     }
                 }
             }

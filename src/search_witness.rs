@@ -3,8 +3,8 @@
 //! It's quite a bit difficult to tell if a byte stream contains
 //! meaningful text produced by human.
 //!
-//! However, I still found some notable text: `output/witness-text.txt`. Their witness-scripts are
-//! formed like this:
+//! However, I still found some notable entries: `output/witness-text.txt`. Their witness-scripts
+//! are formed like this:
 //!
 //! ```
 //! OP_PUSHBYTES/OP_PUSHDATAN <data> OP_DROP OP_PUSHNUM_1
