@@ -2,14 +2,16 @@ use bitcoin::opcodes::all::OP_EQUAL;
 use bitcoin::opcodes::OP_TRUE;
 use bitcoin::script::ScriptBufExt;
 use bitcoin::{Address, KnownHrp, ScriptBuf};
+use std::io::stdout;
 
 fn main() -> anyhow::Result<()> {
-    // let mut witness = Witness::new();
-    // // args for redeem-script
-    // witness.push()
+    let writer = stdout();
+    let writer = writer.lock();
+    let mut csv = csv::Writer::from_writer(writer);
+    csv.write_record(&["Header"]).unwrap();
 
-    let ws = ScriptBuf::builder().push_opcode(OP_EQUAL).into_script();
-    let address = Address::p2wsh(&ws, KnownHrp::Mainnet)?;
-    println!("{}", address);
+    loop {
+        csv.write_record(&["1"])?;
+    }
     Ok(())
 }

@@ -237,6 +237,10 @@ path = "src/fetch_witness.rs"
 name = "search-witness"
 path = "src/search_witness.rs"
 
+[[bin]]
+name = "large-op-return"
+path = "src/large_op_return.rs"
+
 [features]
 #default = ["rocksdb"]
 #rocksdb = ["dep:librocksdb-sys", "dep:rocksdb"]

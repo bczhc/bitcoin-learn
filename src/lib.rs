@@ -10,7 +10,7 @@ use bczhc_lib::char::han_char_range;
 use bitcoin::absolute::{encode, LockTime};
 use bitcoin::address::script_pubkey::BuilderExt;
 use bitcoin::key::Secp256k1;
-use bitcoin::opcodes::all::{OP_PUSHBYTES_75, OP_PUSHDATA1, OP_PUSHDATA2};
+use bitcoin::opcodes::all::{OP_PUSHBYTES_75, OP_PUSHDATA1, OP_PUSHDATA2, OP_PUSHDATA4};
 use bitcoin::script::{PushBytes, ScriptBufExt, ScriptExt};
 use bitcoin::secp256k1::{All, Message, SecretKey};
 use bitcoin::sighash::SighashCache;
@@ -502,6 +502,19 @@ pub fn extract_op_return(script: &Script) -> Option<&[u8]> {
                 return None;
             }
             return Some(&bytes[4..(4 + length)]);
+        }
+        Some(&x) if x == OP_PUSHDATA4.to_u8() => {
+            // OP_PUSHDATA4
+            let (Some(&len1), Some(&len2), Some(&len3), Some(&len4)) =
+                (bytes.get(2), bytes.get(3), bytes.get(4), bytes.get(5))
+            else {
+                return None;
+            };
+            let length = u32::from_le_bytes([len1, len2, len3, len4]) as usize;
+            if bytes.len() - 6 < length {
+                return None;
+            }
+            return Some(&bytes[6..(6 + length)]);
         }
         _ => {}
     }
@@ -1072,7 +1085,6 @@ pub mod mining {
 #[cfg(test)]
 mod test {
     use crate::{decode_bitcoin_core_var_int, extract_op_return, guess_meaningful_text, XorReader};
-    use bitcoin::opcodes::all::{OP_PUSHDATA1, OP_PUSHDATA2};
     use hex_literal::hex;
     use std::io::{Cursor, Read};
 
@@ -1142,6 +1154,24 @@ mod test {
         assert_eq!(
             extract_op_return(script_hex!("6a4d04006162636465")),
             Some(&b"abcd"[..])
+        );
+        // OP_PUSHDATA4
+        assert_eq!(extract_op_return(script_hex!("6a4e")), None);
+        assert_eq!(extract_op_return(script_hex!("6a4e06")), None);
+        assert_eq!(extract_op_return(script_hex!("6a4e0600")), None);
+        assert_eq!(extract_op_return(script_hex!("6a4e06000000")), None);
+        assert_eq!(extract_op_return(script_hex!("6a4e0600000061")), None);
+        assert_eq!(
+            extract_op_return(script_hex!("6a4e060000006162636465")),
+            None
+        );
+        assert_eq!(
+            extract_op_return(script_hex!("6a4e06000000616263646566")),
+            Some(&b"abcdef"[..])
+        );
+        assert_eq!(
+            extract_op_return(script_hex!("6a4e0600000061626364656667")),
+            Some(&b"abcdef"[..])
         );
     }
 }
