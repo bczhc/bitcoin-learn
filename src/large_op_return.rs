@@ -1,5 +1,16 @@
 //! Search op-return data larger than [`THRESHOLD`] bytes.
 //!
+//! The standard enforces OP_RETURN scripts to have a maximum pushed data size: 80 bytes.
+//!
+//! However, on the chain, there are multiple non-standard OP_RETURN transaction with some data
+//! larger.
+//!
+//! Some resources:
+//! - https://x.com/LukeDashjr/status/1819114708634583536
+//!    BTW, Luke Dashjr, the guy that called "inscription" on Bitcoin chain a "fraud".
+//! - https://b10c.me/observations/09-non-standard-transactions
+//! - https://cirosantilli.com/cool-data-embedded-in-the-bitcoin-blockchain
+//!
 //! Output: `large-op-return.csv`.
 
 use bitcoin::params::MAINNET;
