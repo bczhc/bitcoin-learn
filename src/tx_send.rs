@@ -1,4 +1,4 @@
-//! This creates the transaction: https://mempool.space/testnet4/tx/ac59228a274c628cb9142fb50f39df911ccecd3f71192dbb25730731b0846565
+//! This creates the transaction: <https://mempool.space/testnet4/tx/ac59228a274c628cb9142fb50f39df911ccecd3f71192dbb25730731b0846565>
 
 use bitcoin::absolute::LockTime;
 use bitcoin::address::script_pubkey::BuilderExt;

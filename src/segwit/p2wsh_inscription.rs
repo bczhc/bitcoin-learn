@@ -1,4 +1,4 @@
-//! https://mempool.space/testnet4/tx/39bfdee89fade142f4b4b637fff54ddf8f7dba44bd23a2605e7bd02e8550ff69
+//! <https://mempool.space/testnet4/tx/39bfdee89fade142f4b4b637fff54ddf8f7dba44bd23a2605e7bd02e8550ff69>
 
 use bitcoin::opcodes::all::{OP_CHECKSIGVERIFY, OP_DROP, OP_DUP, OP_EQUALVERIFY, OP_HASH160};
 use bitcoin::opcodes::OP_TRUE;

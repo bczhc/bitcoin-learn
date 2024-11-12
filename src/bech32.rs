@@ -1,4 +1,4 @@
-//! - https://en.bitcoin.it/wiki/BIP_0173
+//! - <https://en.bitcoin.it/wiki/BIP_0173>
 
 use bech32::primitives::checksum;
 use bech32::primitives::encode::Encoder;

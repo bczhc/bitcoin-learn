@@ -537,11 +537,12 @@ pub fn han_char(c: char) -> bool {
 /// This decodes `VarInt` (not `CompactInt`) referred to in Bitcoin-core.
 ///
 /// See:
-/// - https://github.com/bitcoin/bitcoin/blob/c9e67e214f03519da15d81bd7619879bd78dcfb9/src/serialize.h#L370
+///
+/// - <https://github.com/bitcoin/bitcoin/blob/c9e67e214f03519da15d81bd7619879bd78dcfb9/src/serialize.h#L370>
 ///
 /// And the decoding algorithm used here is derived from:
 ///
-/// https://github.com/in3rsha/bitcoin-chainstate-parser/blob/master/README.md?tab=readme-ov-file#varints
+/// <https://github.com/in3rsha/bitcoin-chainstate-parser/blob/master/README.md?tab=readme-ov-file#varints>
 pub fn decode_bitcoin_core_var_int(bytes: &[u8]) -> (u64, usize) {
     const MAX_BYTES_LEN: usize = 4;
     let mut buf = [0_u8; MAX_BYTES_LEN];
@@ -805,7 +806,7 @@ pub trait ScriptBufExt2 {
 
 impl ScriptBufExt2 for ScriptBuf {}
 
-/// https://bitcoin.stackexchange.com/a/77192/159523
+/// <https://bitcoin.stackexchange.com/a/77192/159523>
 pub const MAX_SIGNATURE_LENGTH: usize = 73;
 pub const COMPRESSED_PUBKEY_LENGTH: usize = 1 /* prefix */
     + 32 /* an ECDSA point */;

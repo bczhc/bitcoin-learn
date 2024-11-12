@@ -1,4 +1,4 @@
-//! https://mempool.space/testnet4/tx/0fd7658a90b3d86051d4656d15ca11d5f548c40ab8b50bf486c7dedfcdd70986
+//! <https://mempool.space/testnet4/tx/0fd7658a90b3d86051d4656d15ca11d5f548c40ab8b50bf486c7dedfcdd70986>
 
 use bitcoin::opcodes::all::{OP_ADD, OP_EQUAL};
 use bitcoin::script::ScriptBufExt;

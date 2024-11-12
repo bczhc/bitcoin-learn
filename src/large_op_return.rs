@@ -6,10 +6,13 @@
 //! larger.
 //!
 //! Some resources:
-//! - https://x.com/LukeDashjr/status/1819114708634583536
+//!
+//! - <https://x.com/LukeDashjr/status/1819114708634583536>
+//!
 //!    BTW, Luke Dashjr, the guy that called "inscription" on Bitcoin chain a "fraud".
-//! - https://b10c.me/observations/09-non-standard-transactions
-//! - https://cirosantilli.com/cool-data-embedded-in-the-bitcoin-blockchain
+//!
+//! - <https://b10c.me/observations/09-non-standard-transactions>
+//! - <https://cirosantilli.com/cool-data-embedded-in-the-bitcoin-blockchain>
 //!
 //! Output: `large-op-return.csv`.
 

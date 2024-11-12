@@ -33,14 +33,14 @@
 //! looked up in a blockchain explorer (the flat displaying style).
 //!
 //! This is similar to
-//! https://mempool.space/address/bc1q3ez0mu6q3y59emtl2nweeevnhu7ualvu3ylapp.
+//! <https://mempool.space/address/bc1q3ez0mu6q3y59emtl2nweeevnhu7ualvu3ylapp>.
 //!
 //! Also see notes: `fetch-op-return-image.md`.
 //!
 //! Ehh. However, the extra message is too long to be fitted in a single OP_RETURN data. So split
 //! them more using [`split_message`].
 //!
-//! https://mempool.space/testnet4/tx/6a2998062461aed0c273966b3869404418f5cd399d3ba56748a156c169a9381b
+//! <https://mempool.space/testnet4/tx/6a2998062461aed0c273966b3869404418f5cd399d3ba56748a156c169a9381b>
 
 use bitcoin::script::{PushBytes, ScriptBufExt};
 use bitcoin::{Amount, Network, OutPoint, ScriptBuf, TxOut};

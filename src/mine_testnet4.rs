@@ -4,7 +4,8 @@
 //!
 //! Testnet allows us to mine with the minimal difficulty (bit: 0x1d00ffff) if
 //! the block time interval is more than 20 minutes.
-//! https://github.com/bitcoin/bitcoin/blob/0903ce8dbc25d3823b03d52f6e6bff74d19e801e/src/pow.cpp#L27-L28
+//!
+//! Reference code: <https://github.com/bitcoin/bitcoin/blob/0903ce8dbc25d3823b03d52f6e6bff74d19e801e/src/pow.cpp#L27-L28>
 //!
 //! This gets a bit tricky. If not setting the block time 20 minutes newer, we will get a required
 //! difficulty (bits) for something like 420589345. That's a quite high difficulty, and it's hard
