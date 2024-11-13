@@ -1,4 +1,4 @@
-//! Search Bitcoin SIGHASH_NONE inputs in Blockchain
+//! Search Bitcoin SIGHASH_NONE inputs on Blockchain
 //!
 //! Output: `sighash-none.txt`
 

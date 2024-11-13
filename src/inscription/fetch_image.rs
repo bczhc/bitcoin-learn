@@ -1,6 +1,6 @@
 //! Fetch image inscribed on Bitcoin chain using OP_RETURN
 //!
-#![doc = include_str!("../notes/fetch-op-return-image.md")]
+#![doc = include_str!("../../notes/fetch-op-return-image.md")]
 
 use bitcoin::{Network, Script};
 use bitcoin_demo::{block_parser_recent, extract_op_return};

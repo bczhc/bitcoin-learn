@@ -1,3 +1,5 @@
+//! Parse blk*.dat files.
+
 use bitcoin::consensus::Decodable;
 use bitcoin::Block;
 use byteorder::{ReadBytesExt, LE};

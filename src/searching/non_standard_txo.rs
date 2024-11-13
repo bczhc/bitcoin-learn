@@ -1,4 +1,4 @@
-//! Search nonstandard and abnormal unspent Bitcoin UTXO in Blockchain
+//! Search nonstandard and abnormal unspent Bitcoin UTXO on Blockchain
 //!
 //! Output: `non-standard-txo.txt`
 

@@ -1,6 +1,20 @@
-//! Fetch an image from witness data
+//! Fetch an image from witness data.
 //!
 //! <https://mempool.space/testnet4/tx/bbb38216aad6346f8deac68a7fcfc58c26e6069d32b10cf3d2207f6d82f76203?mode=details>
+//!
+//! I made the transaction using <https://bczhc.github.io/bitcoin-tx-builder>
+//!
+//! with witness data generated like this:
+//! ```no_run
+//! let data = include_bytes!("../res/a.avif");
+//!     println!(
+//!         "{}",
+//!         data.chunks(WITNESS_ITEM_MAX)
+//!             .map(|x| x.hex())
+//!             .collect::<Vec<_>>()
+//!             .join(",")
+//!     );
+//! ```
 
 use bitcoin::Txid;
 use bitcoin_demo::{bitcoin_new_to_old, bitcoin_rpc_testnet4};

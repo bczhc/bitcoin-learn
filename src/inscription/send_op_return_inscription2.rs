@@ -53,7 +53,7 @@ const OUTPUT_OP_RETURN_LIMIT: usize = 75;
 const NETWORK: Network = TESTNET4;
 
 fn main() -> anyhow::Result<()> {
-    let data = include_bytes!("../res/a.avif");
+    let data = include_bytes!("../../res/a.avif");
     let extra_data = split_message(
         &format!(
             r#"按Order拼接得a.avif({}B) Order: {}."#,

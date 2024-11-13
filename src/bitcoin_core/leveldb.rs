@@ -1,3 +1,5 @@
+//! Parse Bitcoin-core index leveldb.
+
 use bitcoin::consensus::Decodable;
 use bitcoin::{Block, BlockHash, Transaction, Txid};
 use bitcoin_demo::{BitcoinCoreVarIntReader, EncodeHex, XorReader};

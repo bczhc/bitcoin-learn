@@ -9,7 +9,9 @@
 //!
 //! - <https://x.com/LukeDashjr/status/1819114708634583536>
 //!
-//!    BTW, Luke Dashjr, the guy that called "inscription" on Bitcoin chain a "fraud".
+//!    BTW, Luke Dashjr, the guy who called "inscription" on Bitcoin chain a "fraud".
+//!    Actually, I also look down such "inscription" things. These things
+//!    are to be considered as an abuse to the Bitcoin's blockchain.
 //!
 //! - <https://b10c.me/observations/09-non-standard-transactions>
 //! - <https://cirosantilli.com/cool-data-embedded-in-the-bitcoin-blockchain>

@@ -71,71 +71,63 @@ bitcoin-units = { path = "/home/bczhc/open-source/rust-bitcoin/units" }
 
 [[bin]]
 name = "fetch-image"
-path = "src/fetch_image.rs"
+path = "src/inscription/fetch_image.rs"
 
 [[bin]]
 name = "tx-subscriber"
-path = "src/tx_subscriber.rs"
-
-[[bin]]
-name = "p2sh"
-path = "src/p2sh.rs"
+path = "src/transaction/tx_subscriber.rs"
 
 [[bin]]
 name = "search-sighash-none"
-path = "src/search_sighash_none.rs"
+path = "src/searching/search_sighash_none.rs"
 
 [[bin]]
 name = "non-standard-txo"
-path = "src/non_standard_txo.rs"
-
-[[bin]]
-name = "signature"
-path = "src/signature.rs"
+path = "src/searching/non_standard_txo.rs"
 
 [[bin]]
 name = "tx-send"
-path = "src/tx_send.rs"
+path = "src/transaction/tx_send.rs"
 
 [[bin]]
 name = "ecdsa"
-path = "src/ecdsa.rs"
+path = "src/protocol/ecdsa.rs"
 
 [[bin]]
-name = "p2sh-redeem-inputs"
-path = "src/p2sh_redeem_inputs.rs"
+name = "small_redeem_inputs"
+path = "src/searching/small_redeem_inputs.rs"
 
 [[bin]]
 name = "difficulty"
-path = "src/difficulty_ath.rs"
+path = "src/searching/difficulty_ath.rs"
 
 [[bin]]
 name = "broadcast-raw"
-path = "src/broadcast_raw.rs"
+path = "src/tools/broadcast_raw.rs"
 
 [[bin]]
 name = "satoshi-address"
-path = "src/satoshi_address.rs"
+path = "src/searching/satoshi_address.rs"
 
 [[bin]]
 name = "bisect-keys"
-path = "src/bisect_keys.rs"
+path = "src/protocol/bisect_keys.rs"
 
 [[bin]]
 name = "mine-genesis"
-path = "src/mine_genesis.rs"
+path = "src/mining/mine_genesis.rs"
 
 [[bin]]
 name = "satoshi-mined-blocks"
-path = "src/satoshi_mined_blocks.rs"
+path = "src/searching/satoshi_mined_blocks.rs"
 
 [[bin]]
 name = "tx-double-reward"
-path = "src/tx_double_reward.rs"
+path = "src/transaction/tx_double_reward.rs"
 
 [[bin]]
 name = "consensus-endianness"
-path = "src/consensus_endianness.rs"
+path = "src/protocol/consensus_endianness.rs"
 
 [[bin]]
 name = "send-to-p2wpkh"
@@ -147,27 +139,23 @@ path = "src/segwit/spend_p2wpkh.rs"
 
 [[bin]]
 name = "my-brainwallet"
-path = "src/my_brainwallet.rs"
+path = "src/tools/my_brainwallet.rs"
 
 [[bin]]
 name = "search-op-return"
-path = "src/search_op_return.rs"
-
-[[bin]]
-name = "op-return-extract"
-path = "src/op_return_extract.rs"
+path = "src/searching/search_op_return.rs"
 
 [[bin]]
 name = "read-db"
-path = "src/read_db.rs"
+path = "src/tools/read_db.rs"
 
 [[bin]]
 name = "blk-files"
-path = "src/blk_files.rs"
+path = "src/bitcoin_core/blk_files.rs"
 
 [[bin]]
 name = "leveldb"
-path = "src/leveldb.rs"
+path = "src/bitcoin_core/leveldb.rs"
 
 [[bin]]
 name = "timelock-create"
@@ -179,43 +167,39 @@ path = "src/timelock/spend.rs"
 
 [[bin]]
 name = "miner-unclaimed"
-path = "src/miner_unclaimed.rs"
+path = "src/searching/miner_unclaimed.rs"
 
 [[bin]]
 name = "utxo-tracking"
-path = "src/utxo_tracking.rs"
+path = "src/tools/utxo_tracking.rs"
 
 [[bin]]
 name = "send-op-return-inscription"
-path = "src/send_op_return_inscription.rs"
+path = "src/inscription/send_op_return_inscription.rs"
 
 [[bin]]
 name = "send-op-return-inscription2"
-path = "src/send_op_return_inscription2.rs"
+path = "src/inscription/send_op_return_inscription2.rs"
 
 [[bin]]
 name = "mine-testnet4"
-path = "src/mine_testnet4.rs"
-
-[[bin]]
-name = "deserialize"
-path = "src/deserialize.rs"
+path = "src/mining/mine_testnet4.rs"
 
 [[bin]]
 name = "rpc"
-path = "src/rpc.rs"
+path = "src/tools/rpc.rs"
 
 [[bin]]
 name = "block-time-interval"
-path = "src/block_time_interval.rs"
+path = "src/searching/block_time_interval.rs"
 
 [[bin]]
 name = "temporary"
-path = "src/temp.rs"
+path = "src/playground.rs"
 
 [[bin]]
 name = "bech32"
-path = "src/bech32.rs"
+path = "src/protocol/bech32.rs"
 
 [[bin]]
 name = "send_to_p2wsh"
@@ -231,15 +215,19 @@ path = "src/segwit/p2wsh_inscription.rs"
 
 [[bin]]
 name = "fetch-witness"
-path = "src/fetch_witness.rs"
+path = "src/inscription/fetch_witness.rs"
 
 [[bin]]
 name = "search-witness"
-path = "src/search_witness.rs"
+path = "src/searching/search_witness.rs"
 
 [[bin]]
 name = "large-op-return"
-path = "src/large_op_return.rs"
+path = "src/searching/large_op_return.rs"
+
+[[bin]]
+name = "script-hash-puzzle"
+path = "src/cracking/script_hash_puzzle.rs"
 
 [features]
 #default = ["rocksdb"]

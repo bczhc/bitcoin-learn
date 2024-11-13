@@ -1,3 +1,11 @@
+//! Find block time intervals less than 20 minutes.
+//!
+//! The testnet allows miners to mine a block with the minimum difficulty, but if
+//! the block time interval is larger than 2 * 10 minutes.
+//!
+//! If not waiting for 20 minutes, you must mine a block with a higher difficulty it requires. This
+//! program finds them.
+
 use bitcoin_demo::{new_parser, TESTNET4};
 
 fn main() -> anyhow::Result<()> {

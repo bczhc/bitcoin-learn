@@ -14,7 +14,7 @@ use bitcoin_demo::{
 const FEE_RATE: f64 = 1.4;
 
 fn main() -> anyhow::Result<()> {
-    let data = include_bytes!("../res/a.avif");
+    let data = include_bytes!("../../res/a.avif");
     let mut tx = default_tx();
     let total_value = Amount::from_sat(453700);
     let network = Network::Testnet(TestnetVersion::V4);

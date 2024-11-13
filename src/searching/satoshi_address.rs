@@ -1,6 +1,6 @@
 //! Bitcoin transaction outputs for Satoshi's address
 //!
-#![doc = include_str!("../notes/txo-to-satoshi.md")]
+#![doc = include_str!("../../notes/txo-to-satoshi.md")]
 
 use bitcoin::address::script_pubkey::ScriptBufExt;
 use bitcoin::{Network, PublicKey, ScriptBuf};

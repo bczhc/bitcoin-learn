@@ -271,6 +271,8 @@ pub fn block_parser_range(range: impl RangeBounds<u32>, network: Network) -> blo
     (start..=end).zip(parser)
 }
 
+pub const WITNESS_ITEM_MAX: usize = 80;
+
 pub trait ScriptsBuilderExt
 where
     Self: Sized,

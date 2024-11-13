@@ -1,4 +1,4 @@
-[src](../src/fetch_image.rs)
+[src](../src/inscription/fetch_image.rs)
 
 ---
 

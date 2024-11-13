@@ -1,4 +1,4 @@
-[src](../src/satoshi_address.rs)
+[src](../src/searching/satoshi_address.rs)
 
 ---
 

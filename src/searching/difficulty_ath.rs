@@ -1,5 +1,7 @@
 //! Bitcoin mining difficulty ATH
 //!
+//! Currently, this one:
+//!
 //! - <https://www.blockchain.com/explorer/blocks/btc/000000000000000000028ba1de91c9603b474a5e2ef6eea461afe847bd963626>
 
 use bitcoin_block_parser::HeaderParser;
