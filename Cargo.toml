@@ -170,10 +170,6 @@ name = "miner-unclaimed"
 path = "src/searching/miner_unclaimed.rs"
 
 [[bin]]
-name = "utxo-tracking"
-path = "src/tools/utxo_tracking.rs"
-
-[[bin]]
 name = "send-op-return-inscription"
 path = "src/inscription/send_op_return_inscription.rs"
 
@@ -194,7 +190,7 @@ name = "block-time-interval"
 path = "src/searching/block_time_interval.rs"
 
 [[bin]]
-name = "temporary"
+name = "playground"
 path = "src/playground.rs"
 
 [[bin]]

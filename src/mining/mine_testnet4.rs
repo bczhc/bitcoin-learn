@@ -19,21 +19,30 @@
 //! power competition. I got no luck making my block shown on the explorer websites - so, when
 //! it's a chance competition, lots of nodes submit blocks at the same time, how
 //! can I ensure the block *I mined* can be the longest chain in the network?
+//!
+//! UPDATE: I know now. Blocks I found on Testnet4 all have a high mining target (at least
+//! 10 zeros), but the block
+//! headers only have a mining difficulty (0x1d00ffff, only requires 8 zeros). Because of this,
+//! their blocks have a larger
+//! proof-of-work, and can be agreed as the longest chain.
+//!
+//! When setting the target to "ten leading zeros", I can't manage to mine a block within
+//! 20 minutes.
 
 use bitcoin::absolute::LockTime;
 use bitcoin::block::Header;
 use bitcoin::merkle_tree::MerkleNode;
 use bitcoin::{
-    block, consensus, transaction, Amount, Block, CompactTarget, ScriptBuf, Transaction, TxIn,
+    block, transaction, Amount, Block, CompactTarget, ScriptBuf, Target, Transaction, TxIn,
     TxMerkleNode, TxOut,
 };
 use bitcoin_demo::{
     bitcoin_new_to_old, bitcoin_old, bitcoin_old_to_new, bitcoin_rpc_testnet4, mining,
-    parse_address, EncodeHex, TESTNET4,
+    parse_address, MINIMUM_BITS, TESTNET4,
 };
 use bitcoincore_rpc::RpcApi;
 use byteorder::{WriteBytesExt, LE};
-use chrono::{DateTime, Local};
+use hex_literal::hex;
 use std::str::FromStr;
 use std::thread::sleep;
 use std::time::Duration;
@@ -43,18 +52,22 @@ fn main() -> anyhow::Result<()> {
     loop {
         let rpc = bitcoin_rpc_testnet4()?;
         println!("Difficulty from RPC: {}", rpc.get_difficulty()?);
-        let last_block_num = /*rpc.get_block_count()?*/ 54094;
         // let last_block_hash = rpc.get_block_hash(last_block_num)?;
         // println!("Last block hash: {}", last_block_hash);
         let last_block_hash = bitcoin_old::BlockHash::from_str(
-            "00000000002426a9b7569e8e42f55a33b4dcd56c5328ae4887b174f3d51909f9",
+            "00000000000328b14d6045e750db52408598c48e6c304e26076d7f1cfea5e320",
         )
         .unwrap();
-        // let last_block = rpc.get_block(&last_block_hash)?;
-        // let last_block_time = last_block.header.time;
-        let last_block_time = "2024-11-10T04:02:16+08:00"
-            .parse::<DateTime<Local>>()?
-            .timestamp() as u32;
+        let last_block = rpc.get_block(&last_block_hash)?;
+        let last_block_height = last_block.bip34_block_height()?;
+        let last_block_time = last_block.header.time;
+        // let last_block_time = "2024-11-10T04:02:16+08:00"
+        //     .parse::<DateTime<Local>>()?
+        //     .timestamp() as u32;
+        let suggested_target = Target::from_be_bytes(hex!(
+            "0000000000ffff00000000000000000000000000000000000000000000000000"
+        ));
+        let suggested_bits = suggested_target.to_compact_lossy().to_consensus();
 
         let coinbase_text = format!("Mined by bczhc --- {i}");
         println!("Coinbase message: {coinbase_text}");
@@ -63,8 +76,11 @@ fn main() -> anyhow::Result<()> {
             lock_time: LockTime::ZERO,
             input: vec![{
                 let mut txi = TxIn::EMPTY_COINBASE;
+                // BIP34 block height
                 let mut msg_vec: Vec<u8> = vec![0x03];
-                msg_vec.write_u24::<LE>(last_block_num as u32 + 1).unwrap();
+                msg_vec
+                    .write_u24::<LE>(last_block_height as u32 + 1)
+                    .unwrap();
                 for &u8 in coinbase_text.as_bytes() {
                     msg_vec.push(u8);
                 }
@@ -86,7 +102,7 @@ fn main() -> anyhow::Result<()> {
             header: Header {
                 version: block::Version::from_consensus(0x20000000),
                 time: block_time,
-                bits: CompactTarget::from_consensus(0x1d00ffff),
+                bits: CompactTarget::from_consensus(MINIMUM_BITS),
                 nonce: 0,
                 merkle_root,
                 prev_blockhash: bitcoin_old_to_new(&last_block_hash),
@@ -96,15 +112,14 @@ fn main() -> anyhow::Result<()> {
         println!("Bip34 block height: {:?}", block.bip34_block_height());
 
         println!("{:?}", block);
-        let result = mining::mine(block.clone());
+        let result = mining::mine(block.clone(), Some(suggested_bits));
         if let Some(n) = result {
             let mut block = block.clone();
             block.header.nonce = n;
             println!("{}", block.block_hash());
             loop {
                 let result = rpc.submit_block(&bitcoin_new_to_old(&block));
-                println!("Submit block: {}", consensus::serialize(&block).hex());
-                format!("{:?}", result);
+                println!("Submit block {}, result: {:?}", block.block_hash(), result);
                 if result.is_ok() {
                     break;
                 }

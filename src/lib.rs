@@ -429,6 +429,8 @@ pub fn guess_meaningful_text(text: &str) -> bool {
     true
 }
 
+pub const MINIMUM_BITS: u32 = 0x1d00ffff;
+
 #[macro_export]
 macro_rules! script_hex {
     ($x:literal) => {
@@ -868,7 +870,7 @@ pub mod signing_helper {
 
 pub mod mining {
     use crate::EncodeHex;
-    use bitcoin::{consensus, Block, Target};
+    use bitcoin::{consensus, Block, CompactTarget, Target};
     use hex_literal::hex;
     use std::cmp::Ordering;
     use std::fmt;
@@ -883,16 +885,19 @@ pub mod mining {
     pub struct RawBlockHeader([u8; 80]);
 
     impl RawBlockHeader {
+        #[inline(always)]
         fn change_nonce(&mut self, n: u32) {
             unsafe {
                 *(&mut self.0[80 - 4] as *mut u8 as *mut [u8; 4]) = n.to_le_bytes();
             }
         }
 
+        #[inline(always)]
         fn block_hash(&self) -> [u8; 32] {
             crate::sha256d(&self.0)
         }
 
+        #[inline(always)]
         fn block_hash_display(&self) -> String {
             let mut hash = self.block_hash();
             hash.reverse();
@@ -927,6 +932,7 @@ pub mod mining {
     }
 
     impl Uint256 {
+        #[inline(always)]
         fn from_bytes_le(bytes: [u8; 256 / 8]) -> Self {
             unsafe {
                 let lo = *(bytes.as_ptr() as *const u128);
@@ -994,14 +1000,17 @@ pub mod mining {
         assert_eq!(num.to_ne_bytes(), hex!("0000000000000099 8877665544332211"));
     }
 
-    pub fn mine(block: Block) -> Option<u32> {
+    pub fn mine(block: Block, suggest_bits: Option<u32>) -> Option<u32> {
         assert_little_endianness();
 
         let threads = num_cpus::get() as u32;
         println!("use threads: {threads}");
         assert_eq!((u32::MAX as u64 + 1) % threads as u64, 0);
 
-        let bits = block.header.bits;
+        let bits = match suggest_bits {
+            Some(s) => CompactTarget::from_consensus(s),
+            _ => block.header.bits,
+        };
         println!("Bits: {}", bits.to_consensus());
         let target = Target::from(bits);
         let target_le = target.to_le_bytes();
@@ -1018,6 +1027,7 @@ pub mod mining {
             let hash = header.block_hash();
             let hash_num = Uint256::from_bytes_le(hash);
             hash_num.le(target)
+            // &hash[(32 - 5)..] == &[0, 0, 0, 0, 0]
         }
 
         let part = ((u32::MAX as u64 + 1) / threads as u64) as u32;
