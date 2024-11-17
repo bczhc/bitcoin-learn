@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 bitcoin_hashes = "0.14.0"
-bitcoin = { path = "/home/bczhc/open-source/rust-bitcoin/bitcoin", features = ["secp-recovery"] }
+bitcoin = { path = "/mnt/nvme/open-source/rust-bitcoin/bitcoin", features = ["secp-recovery"] }
 rand = "0.8.5"
 #bip38 = "1.1.0"
 hex = "0.4.3"
@@ -63,11 +63,11 @@ clap = { version = "4.5.20", features = ["derive"] }
 
 # TODO: my local workaround for the unreleased versions
 [patch.crates-io]
-base58ck = { path = "/home/bczhc/open-source/rust-bitcoin/base58", features = ["alloc"] }
-bitcoin-primitives = { path = "/home/bczhc/open-source/rust-bitcoin/primitives" }
-bitcoin_hashes = { path = "/home/bczhc/open-source/rust-bitcoin/hashes", version = "=0.15.0" }
-bitcoin-internals = { path = "/home/bczhc/open-source/rust-bitcoin/internals" }
-bitcoin-units = { path = "/home/bczhc/open-source/rust-bitcoin/units" }
+base58ck = { path = "/mnt/nvme/open-source/rust-bitcoin/base58", features = ["alloc"] }
+bitcoin-primitives = { path = "/mnt/nvme/open-source/rust-bitcoin/primitives" }
+bitcoin_hashes = { path = "/mnt/nvme/open-source/rust-bitcoin/hashes", version = "=0.15.0" }
+bitcoin-internals = { path = "/mnt/nvme/open-source/rust-bitcoin/internals" }
+bitcoin-units = { path = "/mnt/nvme/open-source/rust-bitcoin/units" }
 
 [[bin]]
 name = "fetch-image"

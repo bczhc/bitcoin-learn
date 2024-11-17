@@ -17,15 +17,15 @@ fn main() -> anyhow::Result<()> {
 
     run(
         db_path.join("mainnet.db"),
-        File::create("../../output/op-return-chinese/mainnet.csv")?,
+        File::create("output/op-return-chinese/mainnet.csv")?,
     );
     run(
         db_path.join("testnet3.db"),
-        File::create("../../output/op-return-chinese/testnet3.csv")?,
+        File::create("output/op-return-chinese/testnet3.csv")?,
     );
     run(
         db_path.join("testnet4.db"),
-        File::create("../../output/op-return-chinese/testnet4.csv")?,
+        File::create("output/op-return-chinese/testnet4.csv")?,
     );
     Ok(())
 }

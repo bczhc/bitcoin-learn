@@ -3,3 +3,4 @@
 /.cargo/
 /log
 /filter.bin
+/bitcoin-op-return-msg
