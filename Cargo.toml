@@ -33,9 +33,9 @@ tiny-bip39 = "2.0.0"
 #pbkdf2 = "0.12.2"
 #base64 = "0.21.5"
 #hmac = "0.12.1"
-#bitcoin-block-parser = "0.3.2"
+bitcoin-block-parser = "=0.3.4"
 # Until this gets merged: https://github.com/sumopool/bitcoin-block-parser/pull/4
-bitcoin-block-parser = { git = "https://github.com/bczhc/bitcoin-block-parser", branch = "xor-blk" }
+#bitcoin-block-parser = { git = "https://github.com/bczhc/bitcoin-block-parser", branch = "xor-blk" }
 chrono = "0.4.38"
 crossbeam-channel = "0.5.13"
 base64 = "0.22.1"
@@ -44,6 +44,7 @@ num_cpus = "1.16.0"
 once_cell = "1.20.2"
 fern = "0.7.0"
 log = "0.4.22"
+env_logger = "0.11.5"
 humantime = "2.1.0"
 yeet-ops = "1.0.0"
 serde = { version = "1.0.210", features = ["derive"] }
@@ -224,6 +225,14 @@ path = "src/searching/large_op_return.rs"
 [[bin]]
 name = "script-hash-puzzle"
 path = "src/cracking/script_hash_puzzle.rs"
+
+[[bin]]
+name = "base58"
+path = "src/protocol/base58.rs"
+
+[[bin]]
+name = "match_address"
+path = "src/searching/match_address.rs"
 
 [features]
 #default = ["rocksdb"]
