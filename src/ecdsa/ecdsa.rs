@@ -1,6 +1,9 @@
 #![feature(decl_macro)]
 extern crate core;
 
+use bitcoin::secp256k1::{Secp256k1, SecretKey};
+use bitcoin::PrivateKey;
+use hex_literal::hex;
 use num_bigint::BigUint;
 use num_traits::Num;
 
@@ -22,6 +25,14 @@ fn main() -> anyhow::Result<()> {
     // K = k.G
 
     assert!(verify_point(&gx, &gy, &p));
+
+    let secret = hex!("0000000000110011000000000000110000001100000110001111110000000011");
+    let secret = SecretKey::from_slice(&secret)?;
+    let secp = Secp256k1::default();
+
+    let signature = bitcoin::sign_message::sign(&secp, b"hello", secret);
+    println!("{}", signature);
+
     Ok(())
 }
 

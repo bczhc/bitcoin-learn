@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 bitcoin_hashes = "0.14.0"
-bitcoin = { path = "/mnt/nvme/open-source/rust-bitcoin/bitcoin", features = ["secp-recovery"] }
+bitcoin = { path = "/mnt/nvme/open-source/rust-bitcoin/bitcoin", features = ["secp-recovery", "base64"] }
 rand = "0.8.5"
 #bip38 = "1.1.0"
 hex = "0.4.3"
@@ -92,7 +92,7 @@ path = "src/transaction/tx_send.rs"
 
 [[bin]]
 name = "ecdsa"
-path = "src/protocol/ecdsa.rs"
+path = "src/ecdsa/ecdsa.rs"
 
 [[bin]]
 name = "small_redeem_inputs"
@@ -233,6 +233,18 @@ path = "src/protocol/base58.rs"
 [[bin]]
 name = "match_address"
 path = "src/searching/match_address.rs"
+
+[[bin]]
+name = "validatfe"
+path = "src/protocol/validate.rs"
+
+[[bin]]
+name = "weight"
+path = "src/segwit/weight.rs"
+
+[[bin]]
+name = "weight-to-total-ratio"
+path = "src/segwit/witness_to_total_ratio.rs"
 
 [features]
 #default = ["rocksdb"]

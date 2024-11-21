@@ -235,6 +235,7 @@ name = "bitcoin"
 version = "0.33.0-alpha"
 dependencies = [
  "base58ck",
+ "base64 0.22.1",
  "bech32",
  "bitcoin-internals 0.4.0",
  "bitcoin-io 0.2.0",
