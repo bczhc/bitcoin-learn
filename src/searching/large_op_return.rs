@@ -30,6 +30,7 @@ fn main() -> anyhow::Result<()> {
     // let writer = stdout();
     // https://github.com/sumopool/bitcoin-block-parser/issues/5
     // let writer = writer.lock();
+    env_logger::init();
     let mut csv = csv::Writer::from_writer(File::create("../output/output.csv").unwrap());
     csv.write_record(["Block Time", "Block Height", "Tx", "Data", "Lossy Text"])?;
 
