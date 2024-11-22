@@ -1,0 +1,11 @@
+filter3:  Created by LI Long at ChainBow fd2eb43999746320e7bafebd2edcd3815824f032105bdd3ea1cab7c6cc00b927:0
+filter3: yo Smart CAT 5ff6665ce568f3d0554a8d53fe60993731172951f9c15f5d6ff0ad5f2086ee4b:1
+filter3: TMW:Hello world! 5f597b554846aa0767423fc019aad798e72a08643b7f6b9232ba6cda3ae76c72:0
+filter3: TMW:The fool who persists in his folly will become wise. - William Blake 428141a25725ba97cc70332a5f37211c5562928d0e75864b61f81784aec389f8:0
+filter3: TMW:Everyone has a plan 'till they get punched in the mouth. -- Mike Tyson 98c94c2c103aed52695514b47b3edc3c1eb5f4e9862c78156518d2e7bee5e892:0
+filter3: Running bitcoin 7903bc359875e8d3bfa883de63f04b5c62b7d5b8ebe98332e02baa39d59ea671:0
+filter3: There is no second best! 90edeb246608fba5bb3f22becc404fe0f59e2243a1c5168ed2ad382678af934f:0
+filter3: 1 BTC = 1 BTC 475fdf4fc9b1b0c9e3469de3c62557918a29fcf10c6b599365e7f4a544119b0f:0
+filter1: 无论什么时候，无论你在哪儿，我都会永远，永远爱你。 f04d93782a25d88f303631cd763a24dbfd08dc4ca5a0792d2f2075dec6ca1a4d:0
+filter2: 无论什么时候，无论你在哪儿，我都会永远，永远爱你。 f04d93782a25d88f303631cd763a24dbfd08dc4ca5a0792d2f2075dec6ca1a4d:0
+filter2: 唤冬兽 f04d93782a25d88f303631cd763a24dbfd08dc4ca5a0792d2f2075dec6ca1a4d:0

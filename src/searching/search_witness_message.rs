@@ -16,10 +16,12 @@
 use bitcoin::params::MAINNET;
 use bitcoin::script::ScriptExt;
 use bitcoin::Script;
-use bitcoin_demo::block_parser_range;
+use bitcoin_demo::{block_parser_range, enable_logging};
 use hex_literal::hex;
 
 fn main() -> anyhow::Result<()> {
+    enable_logging();
+
     let parser = block_parser_range(481824.., MAINNET.network);
     for (h, block) in parser {
         for tx in block.txdata {

@@ -33,6 +33,7 @@ use rand::rngs::OsRng;
 use rand::RngCore;
 use sha2::Sha256;
 use std::collections::Bound;
+use std::env;
 use std::env::args;
 use std::io::{stdin, stdout, Read, Write};
 use std::ops::RangeBounds;
@@ -823,6 +824,13 @@ pub const ESTIMATED_SCRIPT_SIG_SIZE: usize = 1 /* PUSHBYTES_XX */
     + MAX_SIGNATURE_LENGTH /* signature */
     + 1 /* PUSHBYTES_XX */
     + COMPRESSED_PUBKEY_LENGTH /* public key (compressed) */;
+
+pub const SEGWIT_START: u32 = 481824;
+
+pub fn enable_logging() {
+    env::set_var("RUST_LOG", "info");
+    env_logger::init();
+}
 
 pub mod signing_helper {
     use crate::{wif_to_pubkey, wif_to_secret, ScriptBufExt2};
