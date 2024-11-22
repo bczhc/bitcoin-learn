@@ -21,6 +21,7 @@ use bitcoin::{
 };
 use bitcoin_block_parser::blocks::Options;
 use bitcoin_block_parser::headers::ParsedHeader;
+use bitcoin_block_parser::utxos::{FilterParser, UtxoBlock, UtxoParser};
 use bitcoin_block_parser::{BlockParser, DefaultParser, HeaderParser};
 pub use bitcoincore_rpc::bitcoin as bitcoin_old;
 use bitcoincore_rpc::bitcoin::opcodes::all::OP_PUSHBYTES_1;
@@ -242,7 +243,7 @@ pub fn block_parser_recent(network: Network, block_count: usize) -> block_iter_t
         .zip(parser.into_iter().map(Result::unwrap))
 }
 
-pub fn block_parser_range(range: impl RangeBounds<u32>, network: Network) -> block_iter_type!() {
+fn headers_range(range: impl RangeBounds<u32>, network: Network) -> (Vec<ParsedHeader>, u32, u32) {
     let headers = parse_headers(network);
     let start = match range.start_bound() {
         Bound::Included(&x) => x,
@@ -261,7 +262,11 @@ pub fn block_parser_range(range: impl RangeBounds<u32>, network: Network) -> blo
         }
         Bound::Unbounded => headers.len() as u32 - 1,
     };
+    (headers, start, end)
+}
 
+pub fn block_parser_range(range: impl RangeBounds<u32>, network: Network) -> block_iter_type!() {
+    let (headers, start, end) = headers_range(range, network);
     let range = &headers[start as usize..=end as usize];
 
     let options = Options::default().order_output();
@@ -270,6 +275,67 @@ pub fn block_parser_range(range: impl RangeBounds<u32>, network: Network) -> blo
         .into_iter()
         .map(Result::unwrap);
     (start..=end).zip(parser)
+}
+
+/// This function must index from the genesis block to be able to get the track full utxo.
+pub fn utxo_parser(network: Network) -> impl Iterator<Item = (u32, UtxoBlock)> {
+    let filter_parser = FilterParser::new();
+    filter_parser.write("filter.bin").unwrap();
+    let utxo_parser = UtxoParser::new("filter.bin").unwrap();
+
+    let (headers, start, end) = headers_range(.., network);
+
+    let iter = utxo_parser
+        .parse_with_opts(&headers, Options::default().order_output())
+        .into_iter()
+        .map(Result::unwrap);
+
+    (start..=end).zip(iter)
+}
+
+pub trait UtxoBlockExt {
+    fn fee(&self) -> bitcoin_old::Amount;
+
+    fn tx_fee(
+        &self,
+        tx: &bitcoin_old::Transaction,
+        txid: &bitcoin_old::Txid,
+    ) -> bitcoin_old::Amount;
+}
+
+impl UtxoBlockExt for UtxoBlock {
+    fn fee(&self) -> bitcoin_old::Amount {
+        let block = self;
+        let mut txs = block.transactions();
+        let coinbase_tx = txs.next().expect("No coinbase transaction").0;
+        assert!(coinbase_tx.is_coinbase());
+
+        let mut tx_fee_sum = bitcoin_old::Amount::ZERO;
+        for (tx, txid) in txs {
+            tx_fee_sum += self.tx_fee(tx, txid);
+        }
+
+        tx_fee_sum
+    }
+
+    fn tx_fee(
+        &self,
+        tx: &bitcoin_old::Transaction,
+        txid: &bitcoin_old::Txid,
+    ) -> bitcoin_old::Amount {
+        let mut tx_fee = bitcoin_old::Amount::ZERO;
+
+        // Here I used to call Bitcoin-core RPC `getrawtransaction` to fetch the total input
+        // amount as the old implementation.
+        // Indeed, it's unusable due to the very low performance.
+        // Now, thanks to `UtxoParser` from `bitcoin_block_parser` crate!
+        let inputs = self.input_amount(txid).iter().zip(tx.input.iter());
+        let input_sum: bitcoin_old::Amount = inputs.map(|x| *x.0).sum();
+        let output_sum: bitcoin_old::Amount = tx.output.iter().map(|x| x.value).sum();
+        tx_fee += input_sum - output_sum;
+
+        tx_fee
+    }
 }
 
 pub const WITNESS_ITEM_MAX: usize = 80;

@@ -29,6 +29,20 @@
 //! (Likely) Chinese message output: `output/ordinals-chinese.csv`.
 //!
 //! What I can only see is, that they put much, and much garbage on the chain. Nothing else basically.
+//!
+//! ## Output
+//!
+//! - `output/ordinals-chinese.csv`
+//!
+//!    (Likely) Chinese messages
+//!
+//! - `output/ordinals-mime.csv`
+//!
+//!    All MIME types.
+//!
+//!    ```sql
+//!    select mime, count(mime) from ordinals group by mime;
+//!    ```
 
 use bitcoin::opcodes::all::*;
 use bitcoin::opcodes::*;

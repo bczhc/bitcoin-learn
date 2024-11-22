@@ -12,7 +12,7 @@ use bitcoin_block_parser::blocks::Options;
 use bitcoin_block_parser::utxos::{FilterParser, UtxoParser};
 use bitcoin_block_parser::BlockParser;
 use bitcoin_demo::{
-    bitcoin_block_reward, bitcoin_old, parse_headers, set_up_logging, IntervalLogger,
+    bitcoin_block_reward, bitcoin_old, parse_headers, set_up_logging, IntervalLogger, UtxoBlockExt,
 };
 use log::{debug, info, LevelFilter};
 use rayon::prelude::*;
@@ -47,17 +47,7 @@ fn main() -> anyhow::Result<()> {
         let coinbase_tx = txs.next().expect("No coinbase transaction").0;
         assert!(coinbase_tx.is_coinbase());
 
-        let mut tx_fee = bitcoin_old::Amount::ZERO;
-        for (tx, txid) in txs {
-            // Here I used to call Bitcoin-core RPC `getrawtransaction` to fetch the total input
-            // amount as the old implementation.
-            // Indeed, it's unusable due to the very low performance.
-            // Now, thanks to `UtxoParser` from `bitcoin_block_parser` crate!
-            let inputs = block.input_amount(txid).iter().zip(tx.input.iter());
-            let input_sum: bitcoin_old::Amount = inputs.map(|x| *x.0).sum();
-            let output_sum: bitcoin_old::Amount = tx.output.iter().map(|x| x.value).sum();
-            tx_fee += input_sum - output_sum;
-        }
+        let tx_fee = block.fee();
 
         let miner_claimed: bitcoin_old::Amount = coinbase_tx.output.iter().map(|x| x.value).sum();
         let block_reward = bitcoin_old::Amount::from_sat(bitcoin_block_reward(h));
