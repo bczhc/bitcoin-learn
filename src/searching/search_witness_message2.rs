@@ -9,7 +9,9 @@
 use bitcoin::opcodes::all::*;
 use bitcoin::opcodes::OP_TRUE;
 use bitcoin::params::MAINNET;
+use bitcoin::Script;
 use bitcoin_demo::{bitcoin_old, block_parser_range, enable_logging, han_char, SEGWIT_START};
+use bitcoincore_rpc::bitcoin::ScriptBuf;
 use std::fmt::Display;
 use std::num::NonZeroUsize;
 use utf8_iter::Utf8Chars;

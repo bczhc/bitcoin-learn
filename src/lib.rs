@@ -25,7 +25,7 @@ use bitcoin_block_parser::{BlockParser, DefaultParser, HeaderParser};
 pub use bitcoincore_rpc::bitcoin as bitcoin_old;
 use bitcoincore_rpc::bitcoin::opcodes::all::OP_PUSHBYTES_1;
 use bitcoincore_rpc::{Auth, RpcApi};
-use chrono::{DateTime, Local, TimeZone};
+use chrono::{DateTime, Local, MappedLocalTime, TimeZone};
 use digest::generic_array::GenericArray;
 use digest::typenum::Unsigned;
 use digest::{Digest, FixedOutput, OutputSizeUser};
@@ -470,6 +470,7 @@ pub fn extract_op_return(script: &Script) -> Option<&[u8]> {
         return None;
     }
 
+    // TODO: use [`extract_push_data`]
     // OP_RETURN <OP_PUSHBYTES_1..=OP_PUSHBYTES_75> <data>
     bytes.get(1)?;
     if (OP_PUSHBYTES_1.to_u8()..=OP_PUSHBYTES_75.to_u8()).contains(&bytes[1]) {
@@ -517,6 +518,61 @@ pub fn extract_op_return(script: &Script) -> Option<&[u8]> {
                 return None;
             }
             return Some(&bytes[6..(6 + length)]);
+        }
+        _ => {}
+    }
+
+    None
+}
+
+/// Extracts pushed data from script.
+///
+/// Returns the pushed data along with the read length.
+pub fn extract_push_data(script: &[u8]) -> Option<(&[u8], usize)> {
+    let &first = script.get(0)?;
+
+    // OP_PUSHBYTES_xx <data>
+    if (OP_PUSHBYTES_1.to_u8()..=OP_PUSHBYTES_75.to_u8()).contains(&first) {
+        let pushed_len = (first - OP_PUSHBYTES_1.to_u8() + 1) as usize;
+        let remain = &script[1..];
+        if remain.len() < pushed_len {
+            return None;
+        }
+        return Some((&script[1..(1 + pushed_len)], 1 + pushed_len));
+    }
+
+    // OP_PUSHDATA_xx <length>... <data>
+    match first {
+        x if x == OP_PUSHDATA1.to_u8() => {
+            // OP_PUSHDATA1
+            let length = *script.get(1)? as usize;
+            if script.len() - 2 < length {
+                return None;
+            }
+            return Some((&script[2..(2 + length)], 2 + length));
+        }
+        x if x == OP_PUSHDATA2.to_u8() => {
+            // OP_PUSHDATA2
+            let (&len_low, &len_high) = (script.get(1)?, script.get(2)?);
+            let length = u16::from_le_bytes([len_low, len_high]) as usize;
+            if script.len() - 3 < length {
+                return None;
+            }
+            return Some((&script[3..(3 + length)], 3 + length));
+        }
+        x if x == OP_PUSHDATA4.to_u8() => {
+            // OP_PUSHDATA4
+            let (&len1, &len2, &len3, &len4) = (
+                script.get(1)?,
+                script.get(2)?,
+                script.get(3)?,
+                script.get(4)?,
+            );
+            let length = u32::from_le_bytes([len1, len2, len3, len4]) as usize;
+            if script.len() - 5 < length {
+                return None;
+            }
+            return Some((&script[5..(5 + length)], 5 + length));
         }
         _ => {}
     }
@@ -826,10 +882,15 @@ pub const ESTIMATED_SCRIPT_SIG_SIZE: usize = 1 /* PUSHBYTES_XX */
     + COMPRESSED_PUBKEY_LENGTH /* public key (compressed) */;
 
 pub const SEGWIT_START: u32 = 481824;
+pub const TAPROOT_START: u32 = 709632;
 
 pub fn enable_logging() {
     env::set_var("RUST_LOG", "info");
     env_logger::init();
+}
+
+pub fn parse_block_time(time: u32) -> MappedLocalTime<DateTime<Local>> {
+    Local.timestamp_millis_opt(time as i64 * 1000)
 }
 
 pub mod signing_helper {

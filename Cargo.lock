@@ -303,6 +303,7 @@ dependencies = [
  "pretty-hex",
  "rand",
  "rayon",
+ "regex",
  "ripemd",
  "rusqlite",
  "serde",

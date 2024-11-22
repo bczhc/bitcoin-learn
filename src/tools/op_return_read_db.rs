@@ -1,3 +1,5 @@
+//! Filter (likely) Chinese messages from `search_op_return.rs`.
+
 use bczhc_lib::char::han_char_range;
 use chrono::TimeZone;
 use clap::Parser;
