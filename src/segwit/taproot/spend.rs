@@ -1,8 +1,13 @@
-use bitcoin::key::{TapTweak, UntweakedKeypair};
+use bitcoin::key::{TapTweak, UntweakedKeypair, UntweakedPublicKey};
+use bitcoin::opcodes::all::{OP_EQUAL, OP_PUSHNUM_2};
+use bitcoin::script::ScriptBufExt;
 use bitcoin::secp256k1::{Message, SecretKey};
 use bitcoin::sighash::{Prevouts, SighashCache};
+use bitcoin::taproot::{ControlBlock, LeafVersion, TaprootMerkleBranch};
 use bitcoin::transaction::Version;
-use bitcoin::{Address, Amount, KnownHrp, OutPoint, TapNodeHash, TapSighashType, TxOut, Witness};
+use bitcoin::{
+    Address, Amount, KnownHrp, OutPoint, ScriptBuf, TapNodeHash, TapSighashType, TxOut, Witness,
+};
 use bitcoin_demo::secp256k1::PublicKeyExt;
 use bitcoin_demo::{
     confirm_to_broadcast, default_tx, ideal_checked_op_return, script_hex_owned, sha256, EncodeHex,
@@ -30,7 +35,7 @@ fn main() -> anyhow::Result<()> {
     let taproot = witness_program.program().as_bytes();
     println!("Taproot: {}", taproot.hex());
 
-    // ===================== SPEND =====================
+    // ===================== SPEND (key-path) =====================
     let outpoint = OutPoint {
         txid: "251a84dbdc515fc8748425bc4061f9a386bb298531962f1d579e52507426bd50".parse()?,
         vout: 0,
@@ -89,7 +94,76 @@ fn main() -> anyhow::Result<()> {
     witness.push(buf);
     tx.input[0].witness = witness;
 
+    // ready to broadcast
+    // confirm_to_broadcast(&tx);
+
+    // ===================== SPEND (script-path) =====================
+    let outpoint = OutPoint {
+        txid: "251a84dbdc515fc8748425bc4061f9a386bb298531962f1d579e52507426bd50".parse()?,
+        vout: 1,
+    };
+    let mut tx = default_tx();
+    tx.version = Version::TWO;
+    tx.input[0].previous_output = outpoint;
+    tx.input[0].witness = Witness::default();
+    tx.output = vec![
+        TxOut {
+            value: Amount::ZERO,
+            script_pubkey: ideal_checked_op_return("Taproot script-path 花费测试".as_bytes()),
+        },
+        // change
+        TxOut {
+            value: Amount::from_sat(1500),
+            script_pubkey: script_hex_owned!("001480da730eb450099517b27d94a1073888290b8c5b"),
+        },
+    ];
+
+    let tapscript1 = ScriptBuf::builder().push_opcode(OP_EQUAL).into_script();
+    let tapscript2 = ScriptBuf::builder()
+        .push_opcode(OP_PUSHNUM_2)
+        .push_opcode(OP_EQUAL)
+        .into_script();
+    let path = [
+        // TODO: use bitcoin lib
+        TapNodeHash::from_byte_array(hex!(
+            "90de350ea8c68793e5ca61801f2532c1d30aa605274326ed1296eaa9a22e4976"
+        )),
+    ];
+
+    let inputs = [hex!("43617474697661"), hex!("43617474697661")];
+    // witness format: <script-input>... <tapscript> <control-block>
+    let mut witness = Witness::new();
+    for input in inputs {
+        witness.push(input);
+    }
+    witness.push(tapscript1.as_bytes());
+    let cb = ControlBlock {
+        leaf_version: LeafVersion::TapScript,
+        // Y-coordinate parity is the one of the TWEAKED PUBKEY!
+        output_key_parity: tweaked_keypair.public_parts().1,
+        internal_key: UntweakedPublicKey::from(pk),
+        merkle_branch: TaprootMerkleBranch::from(path),
+    };
+    let cb = cb.serialize();
+    witness.push(&cb);
+
+    tx.input[0].witness = witness;
+
     confirm_to_broadcast(&tx);
 
     Ok(())
+}
+
+#[cfg(test)]
+mod test {
+    use bitcoin::consensus;
+    use bitcoin::taproot::ControlBlock;
+    use hex_literal::hex;
+
+    #[test]
+    fn decode() {
+        let cb = hex!("c1d0a26de792c74854e23e1a17945e6dbab6129537cf1ebf69caf38d796b59badd90de350ea8c68793e5ca61801f2532c1d30aa605274326ed1296eaa9a22e4976");
+        let cb = ControlBlock::decode(&cb).unwrap();
+        println!("{:?}", cb);
+    }
 }

@@ -266,8 +266,8 @@ name = "taproot-tweak"
 path = "src/segwit/taproot/tweak.rs"
 
 [[bin]]
-name = "taproot-key-path"
-path = "src/segwit/taproot/key_path.rs"
+name = "taproot-spend"
+path = "src/segwit/taproot/spend.rs"
 
 [features]
 #default = ["rocksdb"]

@@ -991,6 +991,12 @@ pub mod secp256k1 {
         }
 
         fn coordinates(&self) -> (Point256, Point256);
+
+        fn y_parity(&self) -> secp::Parity {
+            let y = self.coordinates().1;
+            let parity = *y.last().unwrap() % 2;
+            secp::Parity::from_u8(parity).unwrap()
+        }
     }
 
     impl PublicKeyExt for secp::PublicKey {
@@ -1018,6 +1024,10 @@ impl Display for PointHex<(Point256, Point256)> {
         use fmt::Write;
         write!(f, "({}, {})", self.0 .0.hex(), self.0 .1.hex())
     }
+}
+
+pub macro push_bytes($data:expr) {
+    <&PushBytes>::try_from($data)?
 }
 
 pub fn enable_logging() {

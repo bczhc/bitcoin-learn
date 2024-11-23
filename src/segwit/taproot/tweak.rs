@@ -134,10 +134,13 @@ fn tweak(pubkey: Key256, merkle_root: Option<Hash256>) -> Hash256 {
 
 #[cfg(test)]
 mod test {
-    use bitcoin::secp256k1;
+    use bitcoin::hashes::sha256t::Tag;
     use bitcoin::secp256k1::Scalar;
+    use bitcoin::taproot::{LeafNode, LeafVersion, ScriptLeaf, TapTree};
+    use bitcoin::{secp256k1, TapLeafTag};
     use bitcoin_demo::secp256k1::PublicKeyExt;
-    use bitcoin_demo::Key256;
+    use bitcoin_demo::{script_hex, EncodeHex, Key256};
+    use hex_literal::hex;
     use num_bigint::BigUint;
 
     fn decimal_to_hex(decimal: &str) -> Key256 {
@@ -195,5 +198,31 @@ mod test {
                 "62070622898698443831883535403436258712770888294397026493185421712108624767191"
             )
         );
+    }
+
+    #[test]
+    fn tag_hash() {
+        // <leaf-version> OP_EQUAL
+        let data = hex!("c087");
+        let hash = super::tag_hash("TapLeaf", &data);
+        assert_eq!(
+            hash,
+            hex!("7beb14f2a06c7c9b4dfe992e338ed13f7f34ea97cabd481a5e1e4f8a6e75980c")
+        );
+    }
+
+    #[test]
+    fn bitcoin_lib_leaf_hash() {
+        let script = script_hex!("87");
+
+        println!("{}", super::tag_hash("TapLeaf", &hex!("c05287")).hex());
+        let branch_hash = super::branch_hash(
+            hex!("7beb14f2a06c7c9b4dfe992e338ed13f7f34ea97cabd481a5e1e4f8a6e75980c"),
+            hex!("90de350ea8c68793e5ca61801f2532c1d30aa605274326ed1296eaa9a22e4976"),
+        );
+        println!("{}", branch_hash.hex());
+
+        let leaf_node = LeafNode::new_script(script.into(), LeafVersion::TapScript);
+        // TODO
     }
 }
