@@ -5,6 +5,7 @@
 #![feature(bigint_helper_methods)]
 // #![feature(type_alias_impl_trait)]
 
+use crate::secp256k1::Point256;
 use crate::signing_helper::{one_input_sign, sign_sighash};
 use bczhc_lib::char::han_char_range;
 use bitcoin::absolute::{encode, LockTime};
@@ -34,11 +35,12 @@ use rand::rngs::OsRng;
 use rand::RngCore;
 use sha2::Sha256;
 use std::collections::Bound;
-use std::env;
 use std::env::args;
+use std::fmt::{Display, Formatter};
 use std::io::{stdin, stdout, Read, Write};
 use std::ops::RangeBounds;
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::{env, fmt};
 
 pub fn random_secret_key() -> SecretKey {
     let mut bytes = [0_u8; 32];
@@ -505,6 +507,15 @@ macro_rules! script_hex {
     };
 }
 
+#[macro_export]
+macro_rules! script_hex_owned {
+    ($x:literal) => {
+        bitcoin::script::ScriptBuf::from(bitcoin::script::Script::from_bytes(&hex_literal::hex!(
+            $x
+        )))
+    };
+}
+
 pub trait BitcoinAmountExt {
     const DUST_MIN: Amount = Amount::from_sat(1000);
 }
@@ -950,6 +961,65 @@ pub const ESTIMATED_SCRIPT_SIG_SIZE: usize = 1 /* PUSHBYTES_XX */
 pub const SEGWIT_START: u32 = 481824;
 pub const TAPROOT_START: u32 = 709632;
 
+pub type Hash256 = [u8; 32];
+pub type Key256 = [u8; 32];
+pub type Hash512 = [u8; 64];
+
+pub mod secp256k1 {
+    use bitcoin::secp256k1 as secp;
+    pub type Point256 = [u8; 32];
+
+    /// Trait to add some extension functions.
+    ///
+    /// See:
+    ///
+    /// - https://github.com/rust-bitcoin/rust-bitcoin/discussions/3648
+    pub trait PublicKeyExt {
+        fn from_coordinates(x: Point256, y: Point256) -> anyhow::Result<secp::PublicKey> {
+            let mut serialized = [0_u8; 1 + 32 + 32];
+            serialized[0] = 0x04; /* uncompressed */
+            serialized[1..33].copy_from_slice(&x);
+            serialized[33..].copy_from_slice(&y);
+            let pk = bitcoin::PublicKey::from_slice(&serialized)?;
+            Ok(pk.inner)
+        }
+
+        fn from_coordinate_x(x: Point256, parity: secp::Parity) -> anyhow::Result<secp::PublicKey> {
+            let xkey = secp::XOnlyPublicKey::from_slice(&x)?;
+            let pk = secp::PublicKey::from_x_only_public_key(xkey, parity);
+            Ok(pk)
+        }
+
+        fn coordinates(&self) -> (Point256, Point256);
+    }
+
+    impl PublicKeyExt for secp::PublicKey {
+        fn coordinates(&self) -> (Point256, Point256) {
+            let serialized = self.serialize_uncompressed();
+            (
+                (&serialized[1..33]).try_into().unwrap(),
+                (&serialized[33..]).try_into().unwrap(),
+            )
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct PointHex<T>(pub T);
+
+impl Display for PointHex<Point256> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0.hex())
+    }
+}
+
+impl Display for PointHex<(Point256, Point256)> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        use fmt::Write;
+        write!(f, "({}, {})", self.0 .0.hex(), self.0 .1.hex())
+    }
+}
+
 pub fn enable_logging() {
     env::set_var("RUST_LOG", "info");
     env_logger::init();
@@ -1049,7 +1119,7 @@ pub mod mining {
 
     #[repr(C)]
     #[derive(Copy, Clone, Eq, PartialEq, Debug)]
-    struct Uint256 {
+    pub struct Uint256 {
         lo: u128,
         hi: u128,
     }
@@ -1068,7 +1138,7 @@ pub mod mining {
 
     impl Uint256 {
         #[inline(always)]
-        fn from_bytes_le(bytes: [u8; 256 / 8]) -> Self {
+        pub fn from_bytes_le(bytes: [u8; 256 / 8]) -> Self {
             unsafe {
                 let lo = *(bytes.as_ptr() as *const u128);
                 let hi = *(bytes.as_ptr().offset(16) as *const u128);
@@ -1076,7 +1146,7 @@ pub mod mining {
             }
         }
 
-        fn from_bytes_be(bytes: [u8; 256 / 8]) -> Self {
+        pub fn from_bytes_be(bytes: [u8; 256 / 8]) -> Self {
             unsafe {
                 let mut lo_part = *(&bytes[16] as *const u8 as *const [u8; 16]);
                 lo_part.reverse();
@@ -1089,14 +1159,14 @@ pub mod mining {
             }
         }
 
-        fn to_bytes_le(self) -> [u8; 256 / 8] {
+        pub fn to_bytes_le(self) -> [u8; 256 / 8] {
             let mut b = [0_u8; 256 / 8];
             b[..16].copy_from_slice(&self.lo.to_le_bytes());
             b[16..].copy_from_slice(&self.hi.to_le_bytes());
             b
         }
 
-        fn to_bytes_be(self) -> [u8; 256 / 8] {
+        pub fn to_bytes_be(self) -> [u8; 256 / 8] {
             let mut b = [0_u8; 256 / 8];
             b[..16].copy_from_slice(&self.hi.to_be_bytes());
             b[16..].copy_from_slice(&self.lo.to_be_bytes());

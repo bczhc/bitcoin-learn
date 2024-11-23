@@ -262,8 +262,12 @@ name = "search-ordinals"
 path = "src/inscription/search_ordinals.rs"
 
 [[bin]]
-name = "large-tx"
-path = "src/searching/large_tx.rs"
+name = "taproot-tweak"
+path = "src/segwit/taproot/tweak.rs"
+
+[[bin]]
+name = "taproot-key-path"
+path = "src/segwit/taproot/key_path.rs"
 
 [features]
 #default = ["rocksdb"]
