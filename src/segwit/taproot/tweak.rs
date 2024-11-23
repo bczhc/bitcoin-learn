@@ -4,7 +4,7 @@ use bitcoin::opcodes::all::{OP_EQUAL, OP_PUSHNUM_1, OP_PUSHNUM_2};
 use bitcoin::params::TESTNET4;
 use bitcoin::script::ScriptBufExt;
 use bitcoin::secp256k1::Scalar;
-use bitcoin::{Address, KnownHrp, Script, ScriptBuf, TapNodeHash};
+use bitcoin::{consensus, Address, KnownHrp, Script, ScriptBuf, TapNodeHash};
 use bitcoin_demo::bitcoin_old::secp256k1::PublicKey;
 use bitcoin_demo::mining::Uint256;
 use bitcoin_demo::secp256k1::PublicKeyExt;
@@ -104,10 +104,10 @@ fn combine_two_hash(a: Hash256, b: Hash256) -> Hash512 {
 
 fn leaf_hash(leaf_script: &Script) -> [u8; 32] {
     let leaf_version = 0xc0;
-    let script = leaf_script.as_bytes();
+    let script = consensus::serialize(leaf_script);
     let mut data = vec![0_u8; script.len() + 1];
     data[0] = leaf_version;
-    data[1..].copy_from_slice(script);
+    data[1..].copy_from_slice(&script);
 
     tag_hash("TapLeaf", &data)
 }
@@ -134,10 +134,9 @@ fn tweak(pubkey: Key256, merkle_root: Option<Hash256>) -> Hash256 {
 
 #[cfg(test)]
 mod test {
-    use bitcoin::hashes::sha256t::Tag;
     use bitcoin::secp256k1::Scalar;
-    use bitcoin::taproot::{LeafNode, LeafVersion, ScriptLeaf, TapTree};
-    use bitcoin::{secp256k1, TapLeafTag};
+    use bitcoin::taproot::{LeafNode, LeafVersion};
+    use bitcoin::{consensus, secp256k1};
     use bitcoin_demo::secp256k1::PublicKeyExt;
     use bitcoin_demo::{script_hex, EncodeHex, Key256};
     use hex_literal::hex;
@@ -224,5 +223,13 @@ mod test {
 
         let leaf_node = LeafNode::new_script(script.into(), LeafVersion::TapScript);
         // TODO
+
+        let leaf_hash = super::leaf_hash(script_hex!("5187"));
+        assert_eq!(
+            leaf_hash,
+            hex!("6b13becdaf0eee497e2f304adcfa1c0c9e84561c9989b7f2b5fc39f5f90a60f6")
+        );
+
+        assert_ne!(consensus::serialize(script_hex!("5187")), hex!("5187"));
     }
 }
