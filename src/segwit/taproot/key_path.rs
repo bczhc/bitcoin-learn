@@ -1,7 +1,9 @@
 use bitcoin::key::{TapTweak, UntweakedKeypair};
 use bitcoin::secp256k1::{Message, SecretKey};
 use bitcoin::sighash::{Prevouts, SighashCache};
+use bitcoin::transaction::Version;
 use bitcoin::{Address, Amount, KnownHrp, OutPoint, TapNodeHash, TapSighashType, TxOut, Witness};
+use bitcoin_demo::secp256k1::PublicKeyExt;
 use bitcoin_demo::{
     confirm_to_broadcast, default_tx, ideal_checked_op_return, script_hex_owned, sha256, EncodeHex,
 };
@@ -24,6 +26,9 @@ fn main() -> anyhow::Result<()> {
         KnownHrp::Testnets,
     );
     println!("Address: {}", address);
+    let witness_program = address.witness_program().unwrap();
+    let taproot = witness_program.program().as_bytes();
+    println!("Taproot: {}", taproot.hex());
 
     // ===================== SPEND =====================
     let outpoint = OutPoint {
@@ -31,6 +36,8 @@ fn main() -> anyhow::Result<()> {
         vout: 0,
     };
     let mut tx = default_tx();
+    // P2TR requires transaction version two.
+    tx.version = Version::TWO;
     tx.input[0].previous_output = outpoint;
     tx.output = vec![
         TxOut {
@@ -64,15 +71,22 @@ fn main() -> anyhow::Result<()> {
     let keypair = UntweakedKeypair::from_secret_key(&secp, &secret);
     let tweaked_keypair = keypair.tap_tweak(&secp, Some(TapNodeHash::from_byte_array(script_root)));
 
-    // In pay-to-taproot, the trailing sighash flag is optional.
+    let tweaked_pubkey_x = tweaked_keypair.to_inner().public_key().coordinates().0;
+    assert_eq!(tweaked_pubkey_x, taproot);
+
+    // In pay-to-taproot, the trailing sighash flag is optional. The default is All, but we're
+    // using All | AnyoneCanPay, so it should be added.
     // So the signature is 64 or 65 bytes. (Schnorr signature is standardized to always 64 bytes)
     let signature = secp.sign_schnorr(
         &Message::from_digest(sighash.to_byte_array()),
         &tweaked_keypair.to_inner(),
     );
+    let mut buf = [0_u8; 64 + 1];
+    buf[..64].copy_from_slice(&signature.serialize());
+    buf[64] = TapSighashType::AllPlusAnyoneCanPay as u8;
     // In key-path mode, witness has only one field (the signature).
     let mut witness = Witness::new();
-    witness.push(signature.serialize());
+    witness.push(buf);
     tx.input[0].witness = witness;
 
     confirm_to_broadcast(&tx);
