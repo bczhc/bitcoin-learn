@@ -921,6 +921,15 @@ pub fn default_tx() -> Transaction {
     }
 }
 
+pub fn default_txin(outpoint: OutPoint) -> TxIn {
+    TxIn {
+        previous_output: outpoint,
+        script_sig: Default::default(),
+        sequence: Default::default(),
+        witness: Default::default(),
+    }
+}
+
 pub fn parse_address(addr: &str, network: Network) -> anyhow::Result<Address> {
     Ok(addr.parse::<Address<_>>()?.require_network(network)?)
 }

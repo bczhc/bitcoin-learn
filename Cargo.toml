@@ -267,7 +267,7 @@ path = "src/segwit/taproot/tweak.rs"
 
 [[bin]]
 name = "taproot-spend"
-path = "src/segwit/taproot/spend.rs"
+path = "src/segwit/taproot/p2tr.rs"
 
 [features]
 #default = ["rocksdb"]

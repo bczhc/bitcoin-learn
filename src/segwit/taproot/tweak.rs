@@ -75,7 +75,7 @@ fn compute_tweaked_pubkey(pk: PublicKey, script_root: Option<Hash256>) -> (Scala
     let address = Address::from_script(&script, &TESTNET4).unwrap();
     // here we created a p2tr address, with public key (034ba21a14c30a9efa5792b20b801a51612989ca6f20ee3ef80a13c0a64748f36e)
     // and no alternative scripts at all (empty script tree)
-    println!("{}", address);
+    println!("Address: {}", address);
 
     let root = script_root.map(|x| TapNodeHash::from_byte_array(x));
     let lib_address = Address::p2tr(&Default::default(), pk.into(), root, KnownHrp::Testnets);
@@ -135,10 +135,10 @@ fn tweak(pubkey: Key256, merkle_root: Option<Hash256>) -> Hash256 {
 #[cfg(test)]
 mod test {
     use bitcoin::secp256k1::Scalar;
-    use bitcoin::taproot::{LeafNode, LeafVersion};
-    use bitcoin::{consensus, secp256k1};
+    use bitcoin::taproot::{LeafNode, LeafNodes, LeafVersion, TaprootMerkleBranch};
+    use bitcoin::{consensus, secp256k1, ScriptBuf, TapNodeHash};
     use bitcoin_demo::secp256k1::PublicKeyExt;
-    use bitcoin_demo::{script_hex, EncodeHex, Key256};
+    use bitcoin_demo::{script_hex, script_hex_owned, EncodeHex, Key256};
     use hex_literal::hex;
     use num_bigint::BigUint;
 
@@ -167,6 +167,9 @@ mod test {
         assert_eq!((x, y), (x3, y3));
     }
 
+    /// Really thanks to
+    /// https://learnmeabitcoin.com/technical/upgrades/taproot/#example-4-script-path-spend-tree.
+    /// for the test data.
     #[test]
     fn tweak_key() {
         let x = decimal_to_hex(
@@ -211,19 +214,7 @@ mod test {
     }
 
     #[test]
-    fn bitcoin_lib_leaf_hash() {
-        let script = script_hex!("87");
-
-        println!("{}", super::tag_hash("TapLeaf", &hex!("c05287")).hex());
-        let branch_hash = super::branch_hash(
-            hex!("7beb14f2a06c7c9b4dfe992e338ed13f7f34ea97cabd481a5e1e4f8a6e75980c"),
-            hex!("90de350ea8c68793e5ca61801f2532c1d30aa605274326ed1296eaa9a22e4976"),
-        );
-        println!("{}", branch_hash.hex());
-
-        let leaf_node = LeafNode::new_script(script.into(), LeafVersion::TapScript);
-        // TODO
-
+    fn leaf_hash() {
         let leaf_hash = super::leaf_hash(script_hex!("5187"));
         assert_eq!(
             leaf_hash,
@@ -231,5 +222,39 @@ mod test {
         );
 
         assert_ne!(consensus::serialize(script_hex!("5187")), hex!("5187"));
+
+        // using lib
+        let leaf_node = LeafNode::new_script(script_hex_owned!("5187"), LeafVersion::TapScript);
+        let lib_leaf_hash = leaf_node.leaf_hash().unwrap();
+        assert_eq!(lib_leaf_hash.as_byte_array(), &leaf_hash);
+    }
+
+    #[test]
+    fn branch_hash() {
+        let leaf1 = hex!("6b13becdaf0eee497e2f304adcfa1c0c9e84561c9989b7f2b5fc39f5f90a60f6");
+        let leaf2 = hex!("ed5af8352e2a54cce8d3ea326beb7907efa850bdfe3711cef9060c7bb5bcf59e");
+
+        let hash = super::branch_hash(leaf1, leaf2);
+        assert_eq!(
+            hash,
+            hex!("1324300a84045033ec539f60c70d582c48b9acf04150da091694d83171b44ec9")
+        );
+
+        let lib_hash = TapNodeHash::from_node_hashes(
+            TapNodeHash::from_byte_array(leaf1),
+            TapNodeHash::from_byte_array(leaf2),
+        );
+        assert_eq!(hash, lib_hash.to_byte_array());
+    }
+
+    #[test]
+    fn tweak() {
+        let pubkey = hex!("924c163b385af7093440184af6fd6244936d1288cbb41cc3812286d3f83a3329");
+        let merkle_root = hex!("b5b72eea07b3e338962944a752a98772bbe1f1b6550e6fb6ab8c6e6adb152e7c");
+        let tweak = super::tweak(pubkey, Some(merkle_root));
+        assert_eq!(
+            tweak,
+            hex!("28dcaf275e25b339c2b8362dd0db3347fc7336602b2b52d95ffae0149038776c")
+        );
     }
 }

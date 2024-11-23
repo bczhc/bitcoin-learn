@@ -1,33 +1,54 @@
+//! Spend p2tr outputs.
+//!
+//! Transaction:
+//!
+//! <https://mempool.space/testnet4/tx/873e9c7a6a768e8a4a94f0dc1520e20f0f9d3e3fc4bc447186de9ab8e469d330>
+//!
+//! The first input is spent by key-path, and the second one is spent by script-path.
+
 use bitcoin::key::{TapTweak, UntweakedKeypair, UntweakedPublicKey};
 use bitcoin::opcodes::all::{OP_EQUAL, OP_PUSHNUM_2};
 use bitcoin::script::ScriptBufExt;
 use bitcoin::secp256k1::{Message, SecretKey};
 use bitcoin::sighash::{Prevouts, SighashCache};
-use bitcoin::taproot::{ControlBlock, LeafVersion, TaprootMerkleBranch};
+use bitcoin::taproot::{ControlBlock, LeafNode, LeafVersion, TaprootMerkleBranch};
 use bitcoin::transaction::Version;
 use bitcoin::{
     Address, Amount, KnownHrp, OutPoint, ScriptBuf, TapNodeHash, TapSighashType, TxOut, Witness,
 };
 use bitcoin_demo::secp256k1::PublicKeyExt;
 use bitcoin_demo::{
-    confirm_to_broadcast, default_tx, ideal_checked_op_return, script_hex_owned, sha256, EncodeHex,
+    confirm_to_broadcast, default_tx, default_txin, ideal_checked_op_return, script_hex_owned,
+    sha256, EncodeHex,
 };
 use hex_literal::hex;
 
 fn main() -> anyhow::Result<()> {
     use bitcoin::secp256k1 as secp;
+
+    let tapscript1 = ScriptBuf::builder().push_opcode(OP_EQUAL).into_script();
+    let tapscript2 = ScriptBuf::builder()
+        .push_opcode(OP_PUSHNUM_2)
+        .push_opcode(OP_EQUAL)
+        .into_script();
+    let leaf1 = LeafNode::new_script(tapscript1.clone(), LeafVersion::TapScript);
+    let leaf2 = LeafNode::new_script(tapscript2, LeafVersion::TapScript);
+    // Later in the script-path demo, we will only spend using tapscript1. The merkle path
+    // is its sibling node: tapscript2.
+    let path = [leaf2.node_hash()];
+
+    let script_merkle_root = TapNodeHash::from_node_hashes(leaf1.into(), leaf2.into());
+
     let secp: secp::Secp256k1<_> = Default::default();
     let secret = sha256("Chikipi".as_bytes());
     println!("Secret: {}", secret.hex());
     let secret = SecretKey::from_slice(&secret)?;
 
     let pk = secp::PublicKey::from_secret_key(&secp, &secret);
-    // Add two tapscripts. For the scripts, see `tweak.rs`.
-    let script_root = hex!("df2208e7ab006fb6211cca5c5dc42002088d4a3f22afd361c829c72f7fd8251a");
     let address = Address::p2tr(
         &secp,
         pk.into(),
-        Some(TapNodeHash::from_byte_array(script_root)),
+        Some(script_merkle_root),
         KnownHrp::Testnets,
     );
     println!("Address: {}", address);
@@ -35,26 +56,33 @@ fn main() -> anyhow::Result<()> {
     let taproot = witness_program.program().as_bytes();
     println!("Taproot: {}", taproot.hex());
 
-    // ===================== SPEND (key-path) =====================
-    let outpoint = OutPoint {
-        txid: "251a84dbdc515fc8748425bc4061f9a386bb298531962f1d579e52507426bd50".parse()?,
-        vout: 0,
-    };
+    // ===================== SPEND =====================
     let mut tx = default_tx();
     // P2TR requires transaction version two.
     tx.version = Version::TWO;
-    tx.input[0].previous_output = outpoint;
+    tx.input = vec![
+        default_txin(OutPoint {
+            txid: "81ac09f208135efaf099252c3e035c0d7066a59ffc199ac4972ae249b93a58fc".parse()?,
+            vout: 1,
+        }),
+        default_txin(OutPoint {
+            txid: "81ac09f208135efaf099252c3e035c0d7066a59ffc199ac4972ae249b93a58fc".parse()?,
+            vout: 2,
+        }),
+    ];
     tx.output = vec![
         TxOut {
             value: Amount::ZERO,
-            script_pubkey: ideal_checked_op_return("Taproot key-spend 花费测试".as_bytes()),
+            script_pubkey: ideal_checked_op_return("漏洞百出。".as_bytes()),
         },
         // change
         TxOut {
-            value: Amount::from_sat(1500),
+            value: Amount::from_sat(3500),
             script_pubkey: script_hex_owned!("001480da730eb450099517b27d94a1073888290b8c5b"),
         },
     ];
+
+    // Now we begin to sign the first input (key-path spend).
 
     let mut cache = SighashCache::new(tx.clone());
     let prevouts = Prevouts::One(
@@ -62,7 +90,7 @@ fn main() -> anyhow::Result<()> {
         TxOut {
             value: Amount::from_sat(2000),
             script_pubkey: script_hex_owned!(
-                "51200da89757c359da8514ecfd95895c839da9ba6baeafd59c4419d82022ff8696d6"
+                "5120e2ec6dcf201a9527e98e822897c2c422689f3ebfa21339cc1289791c180136fb"
             ),
         },
     );
@@ -74,7 +102,7 @@ fn main() -> anyhow::Result<()> {
 
     // The secret key used to sign must be done the same tweak we've done to the public key first.
     let keypair = UntweakedKeypair::from_secret_key(&secp, &secret);
-    let tweaked_keypair = keypair.tap_tweak(&secp, Some(TapNodeHash::from_byte_array(script_root)));
+    let tweaked_keypair = keypair.tap_tweak(&secp, Some(script_merkle_root));
 
     let tweaked_pubkey_x = tweaked_keypair.to_inner().public_key().coordinates().0;
     assert_eq!(tweaked_pubkey_x, taproot);
@@ -94,42 +122,9 @@ fn main() -> anyhow::Result<()> {
     witness.push(buf);
     tx.input[0].witness = witness;
 
-    // ready to broadcast
-    // confirm_to_broadcast(&tx);
+    // And now, handle the second input (script-path spend).
 
-    // ===================== SPEND (script-path) =====================
-    let outpoint = OutPoint {
-        txid: "251a84dbdc515fc8748425bc4061f9a386bb298531962f1d579e52507426bd50".parse()?,
-        vout: 1,
-    };
-    let mut tx = default_tx();
-    tx.version = Version::TWO;
-    tx.input[0].previous_output = outpoint;
-    tx.input[0].witness = Witness::default();
-    tx.output = vec![
-        TxOut {
-            value: Amount::ZERO,
-            script_pubkey: ideal_checked_op_return("Taproot script-path 花费测试".as_bytes()),
-        },
-        // change
-        TxOut {
-            value: Amount::from_sat(1500),
-            script_pubkey: script_hex_owned!("001480da730eb450099517b27d94a1073888290b8c5b"),
-        },
-    ];
-
-    let tapscript1 = ScriptBuf::builder().push_opcode(OP_EQUAL).into_script();
-    let tapscript2 = ScriptBuf::builder()
-        .push_opcode(OP_PUSHNUM_2)
-        .push_opcode(OP_EQUAL)
-        .into_script();
-    let path = [
-        // TODO: use bitcoin lib
-        TapNodeHash::from_byte_array(hex!(
-            "90de350ea8c68793e5ca61801f2532c1d30aa605274326ed1296eaa9a22e4976"
-        )),
-    ];
-
+    // Pick two identical arbitrary data to unlock the script: OP_EQUAL.
     let inputs = [hex!("43617474697661"), hex!("43617474697661")];
     // witness format: <script-input>... <tapscript> <control-block>
     let mut witness = Witness::new();
@@ -139,7 +134,8 @@ fn main() -> anyhow::Result<()> {
     witness.push(tapscript1.as_bytes());
     let cb = ControlBlock {
         leaf_version: LeafVersion::TapScript,
-        // Y-coordinate parity is the one of the TWEAKED PUBKEY!
+        // Y-coordinate parity is the one of the TWEAKED PUBKEY! Not the original pubkey.
+        // The doc also states this.
         output_key_parity: tweaked_keypair.public_parts().1,
         internal_key: UntweakedPublicKey::from(pk),
         merkle_branch: TaprootMerkleBranch::from(path),
@@ -147,7 +143,7 @@ fn main() -> anyhow::Result<()> {
     let cb = cb.serialize();
     witness.push(&cb);
 
-    tx.input[0].witness = witness;
+    tx.input[1].witness = witness;
 
     confirm_to_broadcast(&tx);
 
@@ -156,8 +152,11 @@ fn main() -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod test {
-    use bitcoin::consensus;
-    use bitcoin::taproot::ControlBlock;
+    use bitcoin::consensus::Encodable;
+    use bitcoin::hashes::sha256t;
+    use bitcoin::taproot::{ControlBlock, LeafVersion};
+    use bitcoin::{Script, TapLeafHash, TapLeafTag, TapTweakTag};
+    use bitcoin_demo::script_hex;
     use hex_literal::hex;
 
     #[test]
@@ -165,5 +164,37 @@ mod test {
         let cb = hex!("c1d0a26de792c74854e23e1a17945e6dbab6129537cf1ebf69caf38d796b59badd90de350ea8c68793e5ca61801f2532c1d30aa605274326ed1296eaa9a22e4976");
         let cb = ControlBlock::decode(&cb).unwrap();
         println!("{:?}", cb);
+    }
+
+    #[test]
+    fn issue() {
+        fn from_script(script: &Script, ver: LeafVersion) -> TapLeafHash {
+            let mut eng = sha256t::Hash::<TapLeafTag>::engine();
+            ver.to_consensus()
+                .consensus_encode(&mut eng)
+                .expect("engines don't error");
+            script
+                .consensus_encode(&mut eng)
+                .expect("engines don't error");
+            let inner = sha256t::Hash::<TapTweakTag>::from_engine(eng);
+            TapLeafHash::from_byte_array(inner.to_byte_array())
+        }
+
+        fn from_script2(script: &Script, ver: LeafVersion) -> TapLeafHash {
+            let mut eng = sha256t::Hash::<TapLeafTag>::engine();
+            ver.to_consensus()
+                .consensus_encode(&mut eng)
+                .expect("engines don't error");
+            script
+                .consensus_encode(&mut eng)
+                .expect("engines don't error");
+            // --------------------------------------- CHANGED HERE ----
+            let inner = sha256t::Hash::<TapLeafTag>::from_engine(eng);
+            TapLeafHash::from_byte_array(inner.to_byte_array())
+        }
+
+        let hash1 = from_script(script_hex!("5187"), LeafVersion::TapScript);
+        let hash2 = from_script2(script_hex!("5187"), LeafVersion::TapScript);
+        assert_eq!(hash1, hash2);
     }
 }
