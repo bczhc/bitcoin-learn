@@ -8,4 +8,4 @@ cargo run -r --bin search-op-return -- bitcoin-op-return-msg testnet
 cargo run -r --bin search-op-return -- bitcoin-op-return-msg mainnet
 cargo run -r --bin search-op-return -- bitcoin-op-return-msg testnet4
 
-cargo run -r --bin read-db -- bitcoin-op-return-msg
+cargo run -r --bin op-return-read-db -- bitcoin-op-return-msg
