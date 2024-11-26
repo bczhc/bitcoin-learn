@@ -269,6 +269,10 @@ path = "src/segwit/taproot/tweak.rs"
 name = "taproot-spend"
 path = "src/segwit/taproot/p2tr.rs"
 
+[[bin]]
+name = "vanity-address"
+path = "src/tools/vanity_address.rs"
+
 [features]
 #default = ["rocksdb"]
 #rocksdb = ["dep:librocksdb-sys", "dep:rocksdb"]
