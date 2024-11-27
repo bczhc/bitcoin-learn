@@ -2,6 +2,7 @@ use bitcoin::secp256k1::{Secp256k1, SecretKey};
 use bitcoin::{Address, NetworkKind, PrivateKey};
 use rand::rngs::OsRng;
 use rand::RngCore;
+use std::alloc::Layout;
 use std::thread::scope;
 use std::{fmt, mem};
 
@@ -17,7 +18,7 @@ fn increase_sk(secret_key: &mut SecretKey) {
 
 fn main() {
     assert_eq!(size_of::<Key>(), 256 / 8);
-    assert_eq!(size_of::<SecretKey>(), 256 / 8);
+    assert_eq!(Layout::new::<SecretKey>(), Layout::new::<[u8; 256 / 8]>());
 
     let jobs = num_cpus::get();
     let start = "1Arch";
