@@ -1,16 +1,23 @@
-//! Get block fee span.
+//! Get block fee span (starting with height 860000).
 //!
-//! Output (interrupted due to OOM): `output/fee-span.txt`.
+//! Output:
 //!
-//! Notice the printed txid, those are transactions with zero fee.
+//! - Fee span: `output/fee-span.txt`
+//! - Non-coinbase transactions with zero fee: `output/zero-fee-tx.txt`.
 
 use bitcoin::params::MAINNET;
 use bitcoin_demo::{enable_logging, utxo_parser, UtxoBlockExt};
 use num_traits::Zero;
+use std::fs::File;
+use std::io;
 
 fn main() -> anyhow::Result<()> {
     enable_logging();
-    let iter = utxo_parser(MAINNET.network).skip(800000);
+    let mut fee_span_output = File::create("output/fee-span.txt")?;
+    let mut zero_fee_output = File::create("output/zero-fee-tx.txt")?;
+    use io::Write;
+
+    let iter = utxo_parser(MAINNET.network).skip(860000);
     for (height, block) in iter {
         let mut fee_rate_list = Vec::new();
         let regular_tx = block.transactions().skip(1);
@@ -24,18 +31,19 @@ fn main() -> anyhow::Result<()> {
             let fee_rate = tx_fee.to_sat() as f64 / vbytes as f64;
             fee_rate_list.push(fee_rate);
             if fee_rate.is_zero() {
-                println!("{}", tx.compute_txid());
+                writeln!(&mut zero_fee_output, "{} {}", height, tx.compute_txid())?;
             }
         }
 
         fee_rate_list.sort_by(|&a, &b| a.partial_cmp(&b).unwrap());
 
-        println!(
+        writeln!(
+            &mut fee_span_output,
             "Fee span of block {}: {:.2} - {:.2} sat/vB",
             height,
             fee_rate_list[0],
             fee_rate_list.last().unwrap()
-        )
+        )?;
     }
 
     Ok(())
