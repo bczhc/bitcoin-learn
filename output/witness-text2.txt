@@ -9,3 +9,6 @@ filter3: 1 BTC = 1 BTC 475fdf4fc9b1b0c9e3469de3c62557918a29fcf10c6b599365e7f4a54
 filter1: 无论什么时候，无论你在哪儿，我都会永远，永远爱你。 f04d93782a25d88f303631cd763a24dbfd08dc4ca5a0792d2f2075dec6ca1a4d:0
 filter2: 无论什么时候，无论你在哪儿，我都会永远，永远爱你。 f04d93782a25d88f303631cd763a24dbfd08dc4ca5a0792d2f2075dec6ca1a4d:0
 filter2: 唤冬兽 f04d93782a25d88f303631cd763a24dbfd08dc4ca5a0792d2f2075dec6ca1a4d:0
+filter1:  e4852c81cc847cb31b4c735fc32ab709ca7ed8c4261352f473463e8376c947b3:0
+filter2: 唤冬兽 e4852c81cc847cb31b4c735fc32ab709ca7ed8c4261352f473463e8376c947b3:0
+filter3: TMW:This is the real secret of life -- to be completely engaged with what you are doing in the here and now. And instead of calling it work, realize it is play.-- Alan Watts c93f0e5731ce1d7f22ebcae53f722eee741f06e317376a40d1962ce1654ab36c:0
