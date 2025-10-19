@@ -17,18 +17,29 @@ fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let db_path = args.db_path;
 
-    run(
-        db_path.join("mainnet.db"),
-        File::create("output/op-return-chinese/mainnet.csv")?,
-    );
-    run(
-        db_path.join("testnet3.db"),
-        File::create("output/op-return-chinese/testnet3.csv")?,
-    );
-    run(
-        db_path.join("testnet4.db"),
-        File::create("output/op-return-chinese/testnet4.csv")?,
-    );
+    let path1 = db_path.join("mainnet.db");
+    if path1.exists() {
+        run(
+            path1,
+            File::create("output/op-return-chinese/mainnet.csv")?,
+        );
+    }
+
+    let path2 = db_path.join(Path::new("testnet3.db"));
+    if path2.exists() {
+        run(
+            db_path.join("testnet3.db"),
+            File::create("output/op-return-chinese/testnet3.csv")?,
+        );
+    }
+
+    let path3 = db_path.join(Path::new("testnet4.db"));
+    if path3.exists() {
+        run(
+            db_path.join("testnet4.db"),
+            File::create("output/op-return-chinese/testnet4.csv")?,
+        );
+    }
     Ok(())
 }
 
@@ -75,7 +86,7 @@ fn run(db_path: impl AsRef<Path>, writer: impl Write) {
                 format!("{}:{}", row.txid, row.vout),
                 text.into(),
             ])
-            .unwrap()
+                .unwrap()
         }
     }
 }

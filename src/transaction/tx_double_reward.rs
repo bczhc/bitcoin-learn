@@ -2,6 +2,7 @@
 
 #![feature(yeet_expr)]
 
+use std::io;
 use crate::reward::LocalStorage;
 use bitcoin::{Amount, Network, TestnetVersion};
 use bitcoin_demo::set_up_logging;
@@ -61,7 +62,7 @@ fn main() -> anyhow::Result<()> {
         // ZMQ message:
         // | hashblock | <32-byte block hash in Little Endian> | <uint32 sequence number in Little Endian>
         // only take the block hash portion
-        let Ok(mut hash): Result<[u8; 32], _> = message.as_ref().try_into() else {
+        let Ok(mut hash): Result<[u8; 32], _> = (&*message).try_into() else {
             continue;
         };
         // bitcoin blocks internally use little-endian uint256

@@ -1,0 +1,4 @@
+[blocks-dir]
+mainnet = "/mnt/nvme/bitcoin/bitcoind/blocks/blocks"
+testnet3 = "/mnt/nvme/bitcoin/bitcoind/blocks/testnet3/blocks"
+testnet4 = "/mnt/nvme/bitcoin/bitcoind/blocks/testnet4/blocks"

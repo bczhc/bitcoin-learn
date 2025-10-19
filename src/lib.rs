@@ -173,21 +173,23 @@ pub fn bitcoin_rpc_testnet4() -> bitcoincore_rpc::Result<bitcoincore_rpc::Client
     )
 }
 
-fn blocks_dir(network: Network) -> &'static str {
+fn blocks_dir(network: Network) -> String {
+    let config = config::read_config().expect("Failed to read config");
+
     match network {
-        Network::Bitcoin => "/mnt/nvme/bitcoin/bitcoind/blocks/blocks",
-        Network::Testnet(TestnetVersion::V3) => "/mnt/nvme/bitcoin/bitcoind/blocks/testnet3/blocks",
-        Network::Testnet(TestnetVersion::V4) => "/mnt/nvme/bitcoin/bitcoind/blocks/testnet4/blocks",
+        Network::Bitcoin => config.blocks_dir.mainnet.clone(),
+        Network::Testnet(TestnetVersion::V3) => config.blocks_dir.testnet3.clone(),
+        Network::Testnet(TestnetVersion::V4) => config.blocks_dir.testnet4.clone(),
         _ => unimplemented!(),
     }
 }
 
 pub fn new_parser(
     network: Network,
-) -> impl IntoIterator<Item = (usize, bitcoincore_rpc::bitcoin::Block)> {
+) -> impl IntoIterator<Item=(usize, bitcoincore_rpc::bitcoin::Block)> {
     let options = Options::default().order_output();
     let blk_dir = blocks_dir(network);
-    let headers = HeaderParser::parse(blk_dir).unwrap();
+    let headers = HeaderParser::parse(&blk_dir).unwrap();
     println!("{}", headers.len());
     // headers.reverse();
     let parser = DefaultParser.parse_with_opts(&headers, options);
@@ -200,10 +202,10 @@ pub fn new_parser(
 
 pub fn new_parser_rev(
     network: Network,
-) -> impl IntoIterator<Item = (usize, bitcoincore_rpc::bitcoin::Block)> {
+) -> impl IntoIterator<Item=(usize, bitcoincore_rpc::bitcoin::Block)> {
     let options = Options::default().order_output();
     let blk_dir = blocks_dir(network);
-    let mut headers = HeaderParser::parse(blk_dir).unwrap();
+    let mut headers = HeaderParser::parse(&blk_dir).unwrap();
     headers.reverse();
     let parser = DefaultParser.parse_with_opts(&headers, options);
 
@@ -214,12 +216,12 @@ pub fn new_parser_rev(
 }
 
 pub fn parse_headers(network: Network) -> Vec<ParsedHeader> {
-    HeaderParser::parse(blocks_dir(network)).unwrap()
+    HeaderParser::parse(&blocks_dir(network)).unwrap()
 }
 
 pub fn block_parser(
     headers: &[ParsedHeader],
-) -> impl IntoIterator<Item = (usize, bitcoincore_rpc::bitcoin::Block)> {
+) -> impl IntoIterator<Item=(usize, bitcoincore_rpc::bitcoin::Block)> {
     let options = Options::default().order_output();
     let parser = DefaultParser.parse_with_opts(headers, options);
 
@@ -280,7 +282,7 @@ pub fn block_parser_range(range: impl RangeBounds<u32>, network: Network) -> blo
 }
 
 /// This function must index from the genesis block to be able to get the track full utxo.
-pub fn utxo_parser(network: Network) -> impl Iterator<Item = (u32, UtxoBlock)> {
+pub fn utxo_parser(network: Network) -> impl Iterator<Item=(u32, UtxoBlock)> {
     let filter_parser = FilterParser::new();
     filter_parser.write("filter.bin").unwrap();
     let utxo_parser = UtxoParser::new("filter.bin").unwrap();
@@ -1031,7 +1033,7 @@ impl Display for PointHex<Point256> {
 impl Display for PointHex<(Point256, Point256)> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         use fmt::Write;
-        write!(f, "({}, {})", self.0 .0.hex(), self.0 .1.hex())
+        write!(f, "({}, {})", self.0.0.hex(), self.0.1.hex())
     }
 }
 
@@ -1413,5 +1415,35 @@ mod test {
             extract_op_return(script_hex!("6a4e0600000061626364656667")),
             Some(&b"abcdef"[..])
         );
+    }
+}
+
+mod config {
+    use figment::providers::{Env, Format, Toml};
+    use figment::Figment;
+    use log::info;
+    use serde::Deserialize;
+
+    #[derive(Deserialize, Debug)]
+    #[serde(rename_all = "kebab-case")]
+    pub struct Config {
+        pub blocks_dir: BlocksDir,
+    }
+
+    #[derive(Deserialize, Debug)]
+    pub struct BlocksDir {
+        pub mainnet: String,
+        pub testnet3: String,
+        pub testnet4: String,
+    }
+
+    const CONFIG_FILE: &str = "./config.toml";
+
+    pub fn read_config() -> anyhow::Result<Config> {
+        let config = Figment::new()
+            .merge(Toml::file(CONFIG_FILE))
+            .merge(Env::prefixed("BITCOIN_")).extract()?;
+        info!("Config: {:#?}", config);
+        Ok(config)
     }
 }
